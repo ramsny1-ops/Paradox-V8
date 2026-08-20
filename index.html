@@ -441,6 +441,71 @@
             .window-tag { font-size: 0.6rem; padding: 3px 8px; }
             .probability-meta { gap: 12px; }
         }
+
+        /* Pink interval model */
+        .interval-model {
+            margin-top: 16px;
+            padding: 14px;
+            background: #0F1725;
+            border: 1px solid #2A3A52;
+        }
+        .interval-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .interval-field label {
+            display: block;
+            font-size: 0.68rem;
+            color: #8A9BB0;
+            margin-bottom: 5px;
+        }
+        .interval-field input {
+            width: 100%;
+            background: #131C2C;
+            border: 1px solid #2A3A52;
+            color: #F0F3FA;
+            padding: 9px;
+            font-family: monospace;
+        }
+        .interval-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .btn-model {
+            border: 1px solid #2A3A52;
+            padding: 8px 12px;
+            background: #1E2A3A;
+            color: #F0F3FA;
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .btn-model:hover { background: #E85D3A; border-color: #E85D3A; }
+        .interval-result {
+            margin-top: 12px;
+            padding: 10px;
+            background: #131C2C;
+            border-left: 4px solid #E85D3A;
+            font-size: 0.72rem;
+            line-height: 1.55;
+        }
+        .model-metrics {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .model-metric {
+            background: #1E2A3A;
+            border: 1px solid #2A3A52;
+            padding: 7px 9px;
+            font-size: 0.64rem;
+        }
+
     </style>
 </head>
 <body>
@@ -487,6 +552,28 @@
                     <button class="btn-outcome" id="addPinkBtn">Pink</button>
                     <button class="btn-outcome" id="resetOutcomesBtn">Reset</button>
                 </div>
+
+                <div class="interval-model">
+                    <div style="font-weight:700;">Pink Interval Model</div>
+                    <div class="card-sub">Deterministic interval extrapolation from recorded timestamps</div>
+                    <div class="interval-grid">
+                        <div class="interval-field">
+                            <label for="intervalA">Previous pink (A)</label>
+                            <input type="time" id="intervalA">
+                        </div>
+                        <div class="interval-field">
+                            <label for="intervalB">Current pink (B)</label>
+                            <input type="time" id="intervalB">
+                        </div>
+                    </div>
+                    <div class="interval-actions">
+                        <button class="btn-model" id="calculateIntervalBtn">Calculate C = 2B − A</button>
+                        <button class="btn-model" id="useLastPinkBtn">Use last 2 pinks</button>
+                    </div>
+                    <div id="intervalResult" class="interval-result">Enter two pink timestamps to calculate the interval and projected next timestamp.</div>
+                    <div id="modelMetrics" class="model-metrics"></div>
+                </div>
+
                 <div id="historyLog" class="history-log">No rounds recorded.</div>
                 <div style="font-weight: 700; margin-top: 14px;">Pattern heatmap · last 30 rounds</div>
                 <div id="heatmapContainer" class="heatmap-row"></div>
@@ -568,7 +655,8 @@
         currentChart: null,
         chartStyle: 'line',
         pinkEvents: [],
-        refreshInterval: null
+        refreshInterval: null,
+        intervalProjection: null
     };
     const dom = {};
 
@@ -592,7 +680,14 @@
     const loadData = () => {
         const saved = localStorage.getItem('pinkHunter_v29');
         if (saved) {
-            try { const p = JSON.parse(saved); state.outcomes = p.outcomes || []; state.pinkEvents = p.pinkEvents || []; } catch(e) {}
+            try {
+                const p = JSON.parse(saved);
+                state.outcomes = p.outcomes || [];
+                state.pinkEvents = (p.pinkEvents || []).map(e => ({
+                    ...e,
+                    time: typeof e.time === 'string' ? e.time : new Date(e.time).toISOString()
+                }));
+            } catch(e) {}
         }
     };
     const saveData = () => {
@@ -686,10 +781,10 @@
         const alerts = [];
         const last4 = colors.slice(-4);
         if (last4.length === 4 && last4.filter(c => c === 'BLUE').length >= 2 && last4[last4.length-1] === 'BLUE' && last4[last4.length-2] === 'BLUE')
-            alerts.push("Pattern 2.1: double blue after mix → expect pink");
+            alerts.push("Pattern 2.1: double blue after mix → possible pattern continuation");
         let consBlue = 0;
         for (let i=colors.length-1; i>=0 && colors[i]==='BLUE'; i--) consBlue++;
-        if (consBlue >= 6 && consBlue <= 8) alerts.push(`Pattern 2.2: ${consBlue} consecutive blues → high pink probability`);
+        if (consBlue >= 6 && consBlue <= 8) alerts.push(`Pattern 2.2: ${consBlue} consecutive blues → elevated model signal`);
         let consPurple = 0;
         for (let i=colors.length-1; i>=0 && colors[i]==='PURPLE'; i--) consPurple++;
         if (consPurple >= 5) alerts.push(`Pattern 2.3: ${consPurple} purples → pink above 20x likely`);
@@ -745,8 +840,8 @@
         const probability = computeProbability(minuteFloat, now.getHours());
         updateGauge(probability);
         let alertText = `Probability: ${probability}%`;
-        if (probability >= 70) alertText += ` – high confidence, increase stake`;
-        else if (probability < 40) alertText += ` – conservative, reduce exposure`;
+        if (probability >= 70) alertText += ` – model signal elevated; do not treat as certainty`;
+        else if (probability < 40) alertText += ` – low model signal; continue observing`;
         else alertText += ` – standard range`;
         dom.alertMessage.innerHTML = alertText;
         pushProbability(probability);
@@ -763,9 +858,93 @@
         }
         dom.forecastContainer.innerHTML = forecastHtml;
     };
+
+    // Pink interval model: C = B + (B - A) = 2B - A.
+    // This is an extrapolation of observed timing, not evidence that future
+    // independently randomized outcomes can be predicted.
+    const timeToMinutes = (value) => {
+        if (!value || !/^\d{2}:\d{2}$/.test(value)) return null;
+        const [h, m] = value.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const minutesToTime = (total) => {
+        total = ((Math.round(total) % 1440) + 1440) % 1440;
+        return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+    };
+
+    const getPinkMinuteSeries = () => state.pinkEvents
+        .map(e => new Date(e.time).getTime())
+        .filter(Number.isFinite)
+        .sort((a,b) => a-b);
+
+    const calculateIntervalProjection = (aText, bText) => {
+        const A = timeToMinutes(aText);
+        let B = timeToMinutes(bText);
+        if (A === null || B === null) return null;
+        if (B < A) B += 1440; // crosses midnight
+        const D = B - A;
+        const C = B + D;
+        return { A, B, D, C, previous: aText, current: bText, predicted: minutesToTime(C) };
+    };
+
+    const getHistoricalIntervals = () => {
+        const series = getPinkMinuteSeries();
+        const gaps = [];
+        for (let i = 1; i < series.length; i++) {
+            const d = (series[i] - series[i-1]) / 60000;
+            if (d >= 0 && d <= 24 * 60) gaps.push(d);
+        }
+        return gaps;
+    };
+
+    const renderIntervalModel = (projection = state.intervalProjection) => {
+        if (!dom.intervalResult) return;
+        if (!projection) {
+            dom.intervalResult.innerHTML = 'Enter two pink timestamps, or use the last two recorded pink events.';
+        } else {
+            dom.intervalResult.innerHTML =
+                `A: <b>${projection.previous}</b> · B: <b>${projection.current}</b><br>` +
+                `Gap D = B − A: <b>${projection.D} min</b><br>` +
+                `Projected C = B + D = 2B − A: <b>${projection.predicted}</b>`;
+        }
+
+        const gaps = getHistoricalIntervals();
+        if (!gaps.length) {
+            dom.modelMetrics.innerHTML = '<span class="model-metric">Historical intervals: insufficient data</span>';
+            return;
+        }
+        const mean = gaps.reduce((s,v) => s + v, 0) / gaps.length;
+        const sorted = [...gaps].sort((a,b) => a-b);
+        const mid = Math.floor(sorted.length / 2);
+        const median = sorted.length % 2 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
+        const variance = gaps.reduce((s,v) => s + (v-mean)**2, 0) / gaps.length;
+        const sd = Math.sqrt(variance);
+        dom.modelMetrics.innerHTML =
+            `<span class="model-metric">Intervals: ${gaps.length}</span>` +
+            `<span class="model-metric">Mean: ${mean.toFixed(1)} min</span>` +
+            `<span class="model-metric">Median: ${median.toFixed(1)} min</span>` +
+            `<span class="model-metric">Spread (SD): ${sd.toFixed(1)} min</span>`;
+    };
+
+    const useLastTwoPinks = () => {
+        const series = getPinkMinuteSeries();
+        if (series.length < 2) {
+            dom.intervalResult.innerHTML = 'Record at least two pink events before using historical timestamps.';
+            return;
+        }
+        const a = new Date(series[series.length - 2]);
+        const b = new Date(series[series.length - 1]);
+        const fmt = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        dom.intervalA.value = fmt(a);
+        dom.intervalB.value = fmt(b);
+        state.intervalProjection = calculateIntervalProjection(dom.intervalA.value, dom.intervalB.value);
+        renderIntervalModel();
+    };
+
     const addOutcome = (color, multiplier = null) => {
         state.outcomes.push({ color, multiplier, timestamp: new Date().toISOString() });
-        if (color === 'PINK') state.pinkEvents.push({ time: new Date(), multiplier: multiplier || 0 });
+        if (color === 'PINK') state.pinkEvents.push({ time: new Date().toISOString(), multiplier: multiplier || 0 });
         saveData();
         updateHistoryUI();
         refreshAll();
@@ -816,7 +995,7 @@
         document.getElementById('menuPattern')?.addEventListener('click', () => { hidePanel(); showPanel('Pattern Intelligence', `<div class="pattern-alert">${detectPatterns()}</div>`); });
         document.getElementById('menuCompounding')?.addEventListener('click', () => { let rows='',b=1000; for(let i=0;i<20;i++){ rows+=`<tr><td class="text-center">${i+1}</td><td class="text-center">1.20x</td><td class="text-end">${b.toFixed(0)} TZS</td><td class="text-end">${(b*1.2).toFixed(0)} TZS</td>`; b*=1.2; } hidePanel(); showPanel('Compounding Table', `<table class="menu-table"><thead><tr><th>Round</th><th>Multiplier</th><th>Placed TZS</th><th>Cashed TZS</th></tr></thead><tbody>${rows}</tbody></table><div class="small mt-2">Start 1,000 TZS, 1.20x each round</div>`); });
         document.getElementById('menuCashout')?.addEventListener('click', () => { hidePanel(); showPanel('Double Bet Strategy', `<div class="tip-card"><div class="tip-title">How to Hedge</div><div class="tip-desc">Auto cash-out first bet at 1.5x to cover total stake. Second bet manually cash out at 5x-10x. Example: 20 TZS on Bet A (1.5x → 30 TZS), 10 TZS on Bet B (5x → 50 TZS). Net profit: 20 TZS.</div></div><div class="tip-card"><div class="tip-title">When to use</div><div class="tip-desc">Ideal for deep blue streaks (6+ blues) and pink windows. Reduces emotional cash-out mistakes.</div></div>`); });
-        document.getElementById('menuTips')?.addEventListener('click', () => { hidePanel(); showPanel('Full Strategy Guide', `<div class="tips-grid"><div class="tip-card"><div class="tip-title">Rule of Three Blues</div><div class="tip-desc">After 3 consecutive blues, 75 percent chance of purple reset. Enter with 2x target.</div></div><div class="tip-card"><div class="tip-title">Deep Blue Pink Hunt</div><div class="tip-desc">6-9 blues in a row → pink due. Use double bet: cover at 2x, chase 10x.</div></div><div class="tip-card"><div class="tip-title">Instaloss Drain</div><div class="tip-desc">Multiple 1.00x-1.05x crashes → stop betting for 5-10 minutes.</div></div><div class="tip-card"><div class="tip-title">Purple Sandwich</div><div class="tip-desc">Pattern Purple-Blue-Purple → next round likely purple. Target 2.5x-3x.</div></div><div class="tip-card"><div class="tip-title">Hourly Pink Windows</div><div class="tip-desc">Community slots: :02-:05, :18-:22, :35-:38, :52-:57 plus original windows.</div></div><div class="tip-card"><div class="tip-title">10x Stack in 60 Mins</div><div class="tip-desc">3-step ladder: double at 2x, then 3x on purple streaks, final pink hunt with double bet.</div></div></div>`); });
+        document.getElementById('menuTips')?.addEventListener('click', () => { hidePanel(); showPanel('Full Strategy Guide', `<div class="tips-grid"><div class="tip-card"><div class="tip-title">Rule of Three Blues</div><div class="tip-desc">After 3 consecutive blues, a claimed pattern signal, not a validated probability. Enter with 2x target.</div></div><div class="tip-card"><div class="tip-title">Deep Blue Pink Hunt</div><div class="tip-desc">6-9 blues in a row → pink not established as predictable; timing model may be checked. Use double bet: cover at 2x, chase 10x.</div></div><div class="tip-card"><div class="tip-title">Instaloss Drain</div><div class="tip-desc">Multiple 1.00x-1.05x crashes → stop betting for 5-10 minutes.</div></div><div class="tip-card"><div class="tip-title">Purple Sandwich</div><div class="tip-desc">Pattern Purple-Blue-Purple → next round likely purple. Target 2.5x-3x.</div></div><div class="tip-card"><div class="tip-title">Hourly Pink Windows</div><div class="tip-desc">Community slots: :02-:05, :18-:22, :35-:38, :52-:57 plus original windows.</div></div><div class="tip-card"><div class="tip-title">10x Stack in 60 Mins</div><div class="tip-desc">3-step ladder: double at 2x, then 3x on purple streaks, final pink hunt with double bet.</div></div></div>`); });
         document.getElementById('menuDisclaimer')?.addEventListener('click', () => { hidePanel(); showPanel('Disclaimer', `<div class="pattern-alert">Informational use only. Past patterns do not guarantee future results. Created by RMS Group. Gamble responsibly.</div>`); });
     };
     const initDraggable = () => {
@@ -869,12 +1048,27 @@
         dom.heatmapContainer = document.getElementById('heatmapContainer');
         dom.chartFeedback = document.getElementById('chartFeedback');
         dom.strategyAdvice = document.getElementById('strategyAdvice');
+        dom.intervalA = document.getElementById('intervalA');
+        dom.intervalB = document.getElementById('intervalB');
+        dom.intervalResult = document.getElementById('intervalResult');
+        dom.modelMetrics = document.getElementById('modelMetrics');
+        dom.calculateIntervalBtn = document.getElementById('calculateIntervalBtn');
+        dom.useLastPinkBtn = document.getElementById('useLastPinkBtn');
         PINK_WINDOWS.forEach(([s,e]) => { let tag = document.createElement('span'); tag.className = 'window-tag'; tag.innerText = `${s}-${e} min`; dom.windowsContainer.appendChild(tag); });
-        loadData(); updateHistoryUI();
+        loadData(); updateHistoryUI(); renderIntervalModel();
         dom.addBlue.onclick = () => addOutcome('BLUE');
         dom.addPurple.onclick = () => addOutcome('PURPLE');
         dom.addPink.onclick = () => addOutcome('PINK', null);
         dom.resetBtn.onclick = resetOutcomes;
+        dom.calculateIntervalBtn.onclick = () => {
+            state.intervalProjection = calculateIntervalProjection(dom.intervalA.value, dom.intervalB.value);
+            if (!state.intervalProjection) {
+                dom.intervalResult.innerHTML = 'Please enter valid timestamps for A and B.';
+                return;
+            }
+            renderIntervalModel();
+        };
+        dom.useLastPinkBtn.onclick = useLastTwoPinks;
         dom.closePanelBtn.onclick = hidePanel;
         dom.menuOverlay.onclick = hidePanel;
         document.querySelectorAll('.chart-opt').forEach(opt => opt.addEventListener('click', () => {
