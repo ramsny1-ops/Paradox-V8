@@ -1,1095 +1,1802 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Flight Core | ramsny1-ops Aviator Engineering</title>
-    <!-- Chart.js + D3.js + Particles.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <!-- Font Awesome for footer icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        /* ------------------------------------------------------------
-           MOBILE-FIRST DESIGN – NO BORDER-RADIUS ON ANY BORDERED ELEMENT
-           EXCEPT CIRCULAR MENU BUTTON. NO EMOJIS, PROFESSIONAL FOOTER
-        ------------------------------------------------------------ */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        body {
-            background: #0A0E17;
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: #F0F3FA;
-            position: relative;
-            overflow-x: hidden;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        #particles-js {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
-        }
-        .app-container {
-            flex: 1;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            padding-bottom: 40px;
-            position: relative;
-            z-index: 2;
-        }
-        /* Loader */
-        .loader-overlay {
-            position: fixed;
-            inset: 0;
-            background: #0A0E17;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            transition: opacity 0.4s ease;
-        }
-        .circular-loader {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, #E85D3A, #FFFFFF, #E85D3A);
-            animation: spinLoader 0.8s linear infinite;
-            mask: radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px));
-        }
-        @keyframes spinLoader { 100% { transform: rotate(360deg); } }
-        /* Circular menu button – only element with border-radius */
-        .circular-menu-btn {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            background: #1F2A3E;
-            border: 1px solid #2A3A52;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 1000;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .circular-menu-btn:hover { background: #E85D3A; border-color: #E85D3A; transform: scale(1.02); }
-        .circular-menu-btn span {
-            display: block;
-            width: 22px;
-            height: 2px;
-            background: white;
-            margin: 4px 0;
-        }
-        .circular-menu-btn:active { transform: scale(0.96); }
-        .menu-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(8px);
-            z-index: 1001;
-            display: none;
-        }
-        .menu-panel {
-            position: fixed;
-            bottom: 100px;
-            right: 24px;
-            width: 90%;
-            max-width: 450px;
-            background: #131C2C;
-            border: 1px solid #2A3A52;
-            z-index: 1002;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
-        }
-        .menu-panel.open { display: flex; }
-        .menu-header {
-            padding: 16px 20px;
-            background: #0F1725;
-            font-weight: 700;
-            font-size: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #2A3A52;
-            color: #00d4ff;
-        }
-        .menu-header button {
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: #8A9BB0;
-            transition: 0.2s;
-        }
-        .menu-header button:hover { color: #E85D3A; }
-        .menu-content {
-            padding: 16px;
-            max-height: 65vh;
-            overflow-y: auto;
-        }
-        .menu-item {
-            display: block;
-            width: 100%;
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            text-align: left;
-            background: #0F1725;
-            border: 1px solid #2A3A52;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #F0F3FA;
-        }
-        .menu-item:hover {
-            background: #E85D3A;
-            border-color: #E85D3A;
-            transform: translateX(4px);
-        }
-        .menu-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #0F1725;
-            color: #F0F3FA;
-            font-size: 0.7rem;
-        }
-        .menu-table th, .menu-table td {
-            border: 1px solid #2A3A52;
-            padding: 8px 10px;
-            text-align: left;
-        }
-        .menu-table th { background: #1E2A3A; color: #00d4ff; font-weight: 700; }
-        .tips-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .tip-card {
-            background: #0F1725;
-            border-left: 4px solid #E85D3A;
-            padding: 12px 14px;
-        }
-        .tip-title { font-weight: 800; color: #E85D3A; margin-bottom: 6px; font-size: 0.85rem; }
-        .tip-desc { color: #b8c7e7; line-height: 1.4; font-size: 0.75rem; }
-        /* Dashboard grid – mobile first */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            margin-top: 20px;
-        }
-        .card {
-            background: #131C2C;
-            border: 1px solid #2A3A52;
-            transition: box-shadow 0.2s ease;
-            overflow: hidden;
-        }
-        .card:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
-        .card-header {
-            padding: 16px 20px 8px;
-            border-bottom: 1px solid #2A3A52;
-        }
-        .card-title { font-weight: 700; font-size: 1.2rem; color: white; }
-        .card-sub { font-size: 0.65rem; color: #8A9BB0; margin-top: 4px; }
-        .card-content { padding: 16px 20px 20px; }
-        /* Fixed circular gauge */
-        .gauge-container {
-            display: flex;
-            justify-content: center;
-            margin: 12px 0;
-        }
-        .gauge-svg {
-            width: 160px;
-            height: 160px;
-        }
-        .gauge-circle-bg {
-            fill: none;
-            stroke: #2A3A52;
-            stroke-width: 12;
-        }
-        .gauge-circle-fill {
-            fill: none;
-            stroke: #E85D3A;
-            stroke-width: 12;
-            stroke-linecap: round;
-            stroke-dasharray: 502; /* circumference 2*pi*80 ≈ 502.65 */
-            stroke-dashoffset: 502;
-            transition: stroke-dashoffset 0.3s ease;
-        }
-        .gauge-text {
-            font-size: 28px;
-            font-weight: 800;
-            fill: white;
-            text-anchor: middle;
-            dominant-baseline: middle;
-        }
-        .probability-meta {
-            display: flex;
-            justify-content: center;
-            gap: 16px;
-            margin-top: 8px;
-            font-size: 0.7rem;
-            color: #8A9BB0;
-            flex-wrap: wrap;
-        }
-        .alert-badge {
-            background: #1E2A3A;
-            padding: 10px 14px;
-            font-size: 0.75rem;
-            border-left: 4px solid #E85D3A;
-            margin-top: 16px;
-        }
-        .timeline-card {
-            background: #0F1725;
-            padding: 14px;
-            margin-top: 16px;
-            border: 1px solid #2A3A52;
-        }
-        .windows-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-        .window-tag {
-            font-family: monospace;
-            font-size: 0.65rem;
-            background: #1E2A3A;
-            padding: 4px 10px;
-            color: #E85D3A;
-            border: 1px solid #2A3A52;
-        }
-        .outcome-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 12px; }
-        .btn-outcome {
-            border: 1px solid #2A3A52;
-            padding: 8px 16px;
-            font-weight: 600;
-            background: #0F1725;
-            color: #F0F3FA;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.75rem;
-        }
-        .btn-outcome:hover {
-            background: #E85D3A;
-            border-color: #E85D3A;
-            color: white;
-        }
-        .history-log {
-            background: #0F1725;
-            padding: 10px;
-            border: 1px solid #2A3A52;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-        .history-badge {
-            background: #1E2A3A;
-            padding: 4px 10px;
-            font-size: 0.65rem;
-            font-weight: 500;
-            border: 1px solid #2A3A52;
-        }
-        .pattern-alert {
-            background: #1E2A3A;
-            padding: 10px 12px;
-            margin-top: 14px;
-            font-size: 0.7rem;
-            border-left: 4px solid #E85D3A;
-        }
-        .heatmap-row { display: flex; gap: 4px; flex-wrap: wrap; margin: 10px 0; }
-        .heatmap-cell {
-            width: 26px;
-            height: 26px;
-            background: #1E2A3A;
-        }
-        .heatmap-cell[data-color="BLUE"] { background: #3B7EA5; }
-        .heatmap-cell[data-color="PURPLE"] { background: #8B5F8C; }
-        .heatmap-cell[data-color="PINK"] { background: #E2728A; }
-        .chart-switch-group {
-            background: #0F1725;
-            padding: 4px;
-            display: flex;
-            margin-bottom: 16px;
-            border: 1px solid #2A3A52;
-        }
-        .chart-opt {
-            flex: 1;
-            text-align: center;
-            padding: 6px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #8A9BB0;
-        }
-        .chart-opt.active {
-            background: #E85D3A;
-            color: white;
-        }
-        .canvas-chart { height: 250px; width: 100%; }
-        .forecast-bars { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; padding-bottom: 4px; }
-        .forecast-item {
-            flex: 0 0 36px;
-            text-align: center;
-            font-size: 0.55rem;
-            color: #8A9BB0;
-        }
-        .forecast-bar {
-            background: #E85D3A;
-            width: 22px;
-            margin: 0 auto;
-            transition: height 0.2s;
-        }
-        .shortcuts-hint {
-            background: #0F1725;
-            padding: 6px 12px;
-            font-size: 0.6rem;
-            display: inline-block;
-            margin-top: 12px;
-            border: 1px solid #2A3A52;
-            color: #8A9BB0;
-        }
-        /* RMS Group Footer – professional, no border-radius */
-        .rms-footer {
-            background: #0F1117;
-            border-top: 1px solid #2A3A52;
-            padding: 32px 0 20px;
-            margin-top: auto;
-            width: 100%;
-        }
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            gap: 24px;
-        }
-        .footer-section {
-            flex: 1;
-            min-width: 180px;
-        }
-        .footer-section h2 {
-            font-size: 1.2rem;
-            color: #00d4ff;
-            margin-bottom: 10px;
-        }
-        .footer-section h3 {
-            font-size: 0.85rem;
-            margin-bottom: 12px;
-            color: #ddd;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .footer-section p, .footer-section a {
-            color: #9aa4bf;
-            text-decoration: none;
-            font-size: 0.75rem;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: color 0.2s;
-        }
-        .footer-section a:hover { color: #00d4ff; }
-        .footer-section i {
-            color: #00d4ff;
-            width: 20px;
-            font-size: 0.9rem;
-        }
-        .tagline {
-            font-style: italic;
-            margin-top: 6px;
-            color: #00d4ff !important;
-        }
-        .footer-bottom {
-            text-align: center;
-            margin-top: 28px;
-            padding-top: 16px;
-            border-top: 1px solid #2A3A52;
-            font-size: 0.65rem;
-            color: #6c7a8e;
-        }
-        /* Tablet and desktop */
-        @media (min-width: 768px) {
-            .app-container { padding: 32px; }
-            .dashboard-grid { grid-template-columns: 1fr 1.2fr; gap: 28px; }
-            .gauge-svg { width: 180px; height: 180px; }
-            .gauge-text { font-size: 34px; }
-            .card-title { font-size: 1.3rem; }
-            .menu-panel { width: 480px; right: 32px; bottom: 112px; }
-            .circular-menu-btn { width: 64px; height: 64px; bottom: 32px; right: 32px; }
-        }
-        @media (max-width: 480px) {
-            .outcome-buttons .btn-outcome { padding: 6px 12px; font-size: 0.7rem; }
-            .window-tag { font-size: 0.6rem; padding: 3px 8px; }
-            .probability-meta { gap: 12px; }
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#090909">
+  <title>Aviator Intelligence</title>
 
-        /* Pink interval model */
-        .interval-model {
-            margin-top: 16px;
-            padding: 14px;
-            background: #0F1725;
-            border: 1px solid #2A3A52;
-        }
-        .interval-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .interval-field label {
-            display: block;
-            font-size: 0.68rem;
-            color: #8A9BB0;
-            margin-bottom: 5px;
-        }
-        .interval-field input {
-            width: 100%;
-            background: #131C2C;
-            border: 1px solid #2A3A52;
-            color: #F0F3FA;
-            padding: 9px;
-            font-family: monospace;
-        }
-        .interval-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .btn-model {
-            border: 1px solid #2A3A52;
-            padding: 8px 12px;
-            background: #1E2A3A;
-            color: #F0F3FA;
-            cursor: pointer;
-            font-size: 0.7rem;
-            font-weight: 700;
-        }
-        .btn-model:hover { background: #E85D3A; border-color: #E85D3A; }
-        .interval-result {
-            margin-top: 12px;
-            padding: 10px;
-            background: #131C2C;
-            border-left: 4px solid #E85D3A;
-            font-size: 0.72rem;
-            line-height: 1.55;
-        }
-        .model-metrics {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .model-metric {
-            background: #1E2A3A;
-            border: 1px solid #2A3A52;
-            padding: 7px 9px;
-            font-size: 0.64rem;
-        }
-
-    </style>
-</head>
-<body>
-<div id="particles-js"></div>
-<div id="loaderOverlay" class="loader-overlay"><div class="circular-loader"></div></div>
-<div class="app-container" id="mainApp" style="display: none;">
-    <!-- Circular menu button (no emojis) -->
-    <div id="menuBtn" class="circular-menu-btn"><div><span></span><span></span><span></span></div></div>
-    <div id="menuOverlay" class="menu-overlay"></div>
-    <div id="menuPanel" class="menu-panel">
-        <div class="menu-header"><span id="panelTitle">Pink Hunter Strategy Core</span><button id="closePanelBtn">✕</button></div>
-        <div id="panelContent" class="menu-content"></div>
-    </div>
-    <div class="dashboard-grid">
-        <!-- Left Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title">Probability Engine</div>
-                <div class="card-sub">Real-time inference · pattern logic · market stability</div>
-            </div>
-            <div class="card-content">
-                <div class="gauge-container">
-                    <svg width="180" height="180" viewBox="0 0 200 200" class="gauge-svg">
-                        <circle cx="100" cy="100" r="80" class="gauge-circle-bg" />
-                        <circle cx="100" cy="100" r="80" class="gauge-circle-fill" id="gaugeCircleFill" />
-                        <text x="100" y="100" class="gauge-text" id="gaugePercent">0%</text>
-                    </svg>
-                </div>
-                <div class="probability-meta">
-                    <span>Pink window: <span id="windowStatus">No</span></span>
-                    <span>Peak slot: <span id="slotStatus">Standard</span></span>
-                    <span>Market: <span id="marketStatus">Loading</span></span>
-                </div>
-                <div id="alertMessage" class="alert-badge">Probability: 0% · awaiting data</div>
-                <div class="timeline-card">
-                    <div style="font-weight: 700;">Pink guarantee windows (each hour)</div>
-                    <div class="windows-row" id="windowsContainer"></div>
-                    <div id="liveMinute" style="margin-top: 8px; font-family: monospace;">Now: -- min</div>
-                </div>
-                <div style="font-weight: 700; margin-top: 16px;">Outcome ingestion</div>
-                <div class="outcome-buttons">
-                    <button class="btn-outcome" id="addBlueBtn">Blue</button>
-                    <button class="btn-outcome" id="addPurpleBtn">Purple</button>
-                    <button class="btn-outcome" id="addPinkBtn">Pink</button>
-                    <button class="btn-outcome" id="resetOutcomesBtn">Reset</button>
-                </div>
-
-                <div class="interval-model">
-                    <div style="font-weight:700;">Pink Interval Model</div>
-                    <div class="card-sub">Deterministic interval extrapolation from recorded timestamps</div>
-                    <div class="interval-grid">
-                        <div class="interval-field">
-                            <label for="intervalA">Previous pink (A)</label>
-                            <input type="time" id="intervalA">
-                        </div>
-                        <div class="interval-field">
-                            <label for="intervalB">Current pink (B)</label>
-                            <input type="time" id="intervalB">
-                        </div>
-                    </div>
-                    <div class="interval-actions">
-                        <button class="btn-model" id="calculateIntervalBtn">Calculate C = 2B − A</button>
-                        <button class="btn-model" id="useLastPinkBtn">Use last 2 pinks</button>
-                    </div>
-                    <div id="intervalResult" class="interval-result">Enter two pink timestamps to calculate the interval and projected next timestamp.</div>
-                    <div id="modelMetrics" class="model-metrics"></div>
-                </div>
-
-                <div id="historyLog" class="history-log">No rounds recorded.</div>
-                <div style="font-weight: 700; margin-top: 14px;">Pattern heatmap · last 30 rounds</div>
-                <div id="heatmapContainer" class="heatmap-row"></div>
-                <div id="patternAlert" class="pattern-alert">Awaiting outcome data for pattern detection</div>
-                <div class="shortcuts-hint">Keyboard: B=Blue  P=Purple  K=Pink  R=Reset  Ctrl+Z=Undo</div>
-                <div style="margin-top: 16px;">
-                    <div style="font-weight: 700; margin-bottom: 8px;">Forecast · next 15 minutes</div>
-                    <div id="forecastContainer" class="forecast-bars"></div>
-                </div>
-            </div>
-        </div>
-        <!-- Right Card -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-title" id="chartTitle">Momentum Oscillator</div>
-                <div class="card-sub" id="liveTimestamp">Real-time trend · interactive</div>
-            </div>
-            <div class="card-content">
-                <div class="chart-switch-group" id="chartSwitcher">
-                    <div class="chart-opt active" data-style="line">Line</div>
-                    <div class="chart-opt" data-style="wave">Wave</div>
-                    <div class="chart-opt" data-style="bar">Bar</div>
-                    <div class="chart-opt" data-style="combo">Combo</div>
-                </div>
-                <div class="canvas-chart"><canvas id="mainChart" width="700" height="280"></canvas></div>
-                <div id="chartFeedback" style="margin-top: 8px; font-size:0.65rem; text-align:center;"></div>
-                <div id="strategyAdvice" class="pattern-alert" style="margin-top: 14px;">Strategy advice will appear based on recent outcomes.</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- RMS Group Footer (professional, no emojis) -->
-<footer class="rms-footer">
-    <div class="footer-container">
-        <div class="footer-section">
-            <h2>RMS Group</h2>
-            <p>Expert software engineering solutions across Tanzania and beyond.</p>
-            <p class="tagline">Building the future of imagination</p>
-        </div>
-        <div class="footer-section">
-            <h3>Contact</h3>
-            <a href="tel:+255697829707"><i class="fas fa-phone"></i> +255 697 829 707</a>
-            <a href="mailto:ramsny1@gmail.com"><i class="fas fa-envelope"></i> ramsny1@gmail.com</a>
-            <p><i class="fas fa-location-dot"></i> Tanzania</p>
-        </div>
-        <div class="footer-section">
-            <h3>Development</h3>
-            <a href="https://github.com/ramsny1-ops" target="_blank"><i class="fab fa-github"></i> ramsny1-ops</a>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        <p>Created and Metallized by RMS Group | &copy; 2026 All Rights Reserved</p>
-    </div>
-</footer>
-
-<script>
-/**
- * Pink Hunter – Ultimate Production Dashboard
- * @fileoverview Mobile-first, zero border-radius on bordered elements (except circular menu),
- * no emojis, professional footer. Full Aviator strategy suite with updated pink windows,
- * rule of three blues, deep blue pink hunt, instaloss detection, purple sandwich,
- * double bet hedge, market stability index, and circular gauge.
- * @author ramsny (ramsulley@gmail.com) / RMS Group
- * @version 29.0.0
- * @date 2026-04-14
- * @license Educational & informational use only
- */
-(function() {
-    // Pink windows (original + community)
-    const PINK_WINDOWS = [
-        [57,60], [0,3], [20,22], [29,31], [40,42], [45,47], [50,52],
-        [2,5], [8,9], [18,22], [28,30], [35,38], [41,42], [55,57]
-    ].sort((a,b) => a[0]-b[0]);
-    
-    let state = {
-        outcomes: [],
-        probHistory: [],
-        currentChart: null,
-        chartStyle: 'line',
-        pinkEvents: [],
-        refreshInterval: null,
-        intervalProjection: null
-    };
-    const dom = {};
-
-    // Particles background
-    if (typeof particlesJS !== 'undefined') {
-        particlesJS('particles-js', {
-            particles: {
-                number: { value: 60, density: { enable: true, value_area: 800 } },
-                color: { value: '#E85D3A' },
-                shape: { type: 'circle' },
-                opacity: { value: 0.25, random: true },
-                size: { value: 2, random: true },
-                line_linked: { enable: true, distance: 150, color: '#E85D3A', opacity: 0.15, width: 1 },
-                move: { enable: true, speed: 1.2, direction: 'none', random: true, straight: false, out_mode: 'out' }
-            },
-            interactivity: { detect_on: 'canvas', events: { onhover: { enable: true, mode: 'repulse' } } }
-        });
+  <style>
+    :root {
+      --bg: #f4f4f2;
+      --surface: #ffffff;
+      --surface-2: #f8f8f6;
+      --surface-3: #eeeeeb;
+      --text: #0a0a0a;
+      --muted: #737373;
+      --subtle: #a2a2a2;
+      --line: #deded9;
+      --line-strong: #c7c7c1;
+      --inverse: #090909;
+      --inverse-text: #ffffff;
+      --pink: #f31d83;
+      --pink-soft: rgba(243, 29, 131, .10);
+      --purple: #7c3aed;
+      --purple-soft: rgba(124, 58, 237, .10);
+      --green: #168a52;
+      --green-soft: rgba(22, 138, 82, .10);
+      --red: #d93f4c;
+      --red-soft: rgba(217, 63, 76, .10);
+      --shadow: 0 18px 55px rgba(0,0,0,.07);
+      --sidebar: 244px;
+      --topbar: 62px;
+      --radius: 15px;
+      --radius-sm: 10px;
+      --transition: 170ms ease;
     }
 
-    // Persistence
-    const loadData = () => {
-        const saved = localStorage.getItem('pinkHunter_v29');
-        if (saved) {
-            try {
-                const p = JSON.parse(saved);
-                state.outcomes = p.outcomes || [];
-                state.pinkEvents = (p.pinkEvents || []).map(e => ({
-                    ...e,
-                    time: typeof e.time === 'string' ? e.time : new Date(e.time).toISOString()
-                }));
-            } catch(e) {}
-        }
-    };
-    const saveData = () => {
-        localStorage.setItem('pinkHunter_v29', JSON.stringify({ outcomes: state.outcomes, pinkEvents: state.pinkEvents }));
+    body[data-theme="dark"] {
+      --bg: #080808;
+      --surface: #101010;
+      --surface-2: #151515;
+      --surface-3: #1d1d1d;
+      --text: #f5f5f5;
+      --muted: #a3a3a3;
+      --subtle: #747474;
+      --line: #292929;
+      --line-strong: #3a3a3a;
+      --inverse: #ffffff;
+      --inverse-text: #080808;
+      --pink-soft: rgba(243, 29, 131, .15);
+      --purple-soft: rgba(124, 58, 237, .16);
+      --green-soft: rgba(22, 138, 82, .15);
+      --red-soft: rgba(217, 63, 76, .15);
+      --shadow: 0 18px 55px rgba(0,0,0,.33);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow: hidden;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .pink-text { color: var(--pink) !important; }
+    .purple-text { color: var(--purple) !important; }
+    .win-text { color: var(--green) !important; }
+    .loss-text { color: var(--red) !important; }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar) minmax(0, 1fr);
+    }
+
+    .sidebar {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 18px 14px;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      z-index: 50;
+    }
+
+    .brand {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 0 9px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--inverse);
+      color: var(--inverse-text);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .brand strong, .brand span { display: block; }
+    .brand strong { font-size: 13px; }
+    .brand span { margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+
+    .nav-label {
+      margin: 18px 10px 7px;
+      color: var(--subtle);
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .nav {
+      min-height: 0;
+      display: grid;
+      gap: 4px;
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+
+    .nav-button {
+      width: 100%;
+      min-height: 39px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 11px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      text-align: left;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition), transform var(--transition);
+    }
+
+    .nav-button:hover { background: var(--surface-2); color: var(--text); }
+    .nav-button.active { background: var(--inverse); color: var(--inverse-text); }
+    .nav-button:active { transform: scale(.985); }
+    .nav-button svg { width: 16px; height: 16px; flex: 0 0 auto; }
+    .nav-button .pink-text, .nav-button.active .pink-text { color: var(--pink) !important; }
+    .nav-button .purple-text, .nav-button.active .purple-text { color: var(--purple) !important; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 9px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .status-row strong { color: var(--text); }
+
+    .content-area { min-width: 0; height: 100vh; }
+
+    .topbar {
+      height: var(--topbar);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 0 24px;
+      background: color-mix(in srgb, var(--bg) 90%, transparent);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .topbar-left, .topbar-actions { display: flex; align-items: center; gap: 12px; }
+    .route small, .route strong { display: block; }
+    .route small { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+    .route strong { margin-top: 2px; font-size: 13px; }
+
+    .clock { text-align: right; }
+    .clock strong, .clock span { display: block; }
+    .clock strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .clock span { margin-top: 1px; color: var(--muted); font-size: 9px; }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface);
+      cursor: pointer;
+    }
+    .icon-button:hover { border-color: var(--line-strong); }
+    .icon-button svg { width: 17px; height: 17px; }
+    .mobile-menu { display: none; }
+
+    main {
+      height: calc(100vh - var(--topbar));
+      padding: 22px 24px 24px;
+      overflow: hidden;
+    }
+
+    .view { display: none; height: 100%; overflow: hidden; animation: viewIn 190ms ease; }
+    .view.active { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 16px; }
+
+    @keyframes viewIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+    .page-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .eyebrow { color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
+    .page-head h1 { margin: 6px 0 0; font-size: clamp(26px, 3vw, 40px); line-height: 1; letter-spacing: -.045em; }
+    .page-head p { max-width: 660px; margin: 8px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+
+
+    .content-fit {
+      min-height: 0;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    .grid { min-height: 0; display: grid; grid-template-columns: repeat(12, minmax(0,1fr)); gap: 14px; align-content: start; }
+    .span-12 { grid-column: span 12; }
+    .span-8 { grid-column: span 8; }
+    .span-7 { grid-column: span 7; }
+    .span-6 { grid-column: span 6; }
+    .span-5 { grid-column: span 5; }
+    .span-4 { grid-column: span 4; }
+
+    .card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-header {
+      min-height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--line);
+    }
+    .card-header h2 { margin: 0; font-size: 13px; letter-spacing: -.015em; }
+    .card-header p { margin: 3px 0 0; color: var(--muted); font-size: 9px; }
+    .card-body { padding: 15px; }
+
+    .hero {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .hero-copy { display: flex; flex-direction: column; justify-content: center; padding: clamp(28px, 4vw, 56px); }
+    .hero-copy h2 { max-width: 760px; margin: 8px 0 0; font-size: clamp(38px, 5vw, 68px); line-height: .98; letter-spacing: -.06em; }
+    .hero-copy p { max-width: 600px; margin: 16px 0 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 22px; }
+    .hero-side { display: grid; place-items: center; min-height: 300px; padding: 24px; border-left: 1px solid var(--line); background: var(--surface-2); }
+    .hero-clock { text-align: center; }
+    .hero-clock strong { display: block; font-size: clamp(48px, 7vw, 88px); line-height: 1; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
+    .hero-clock span { display: block; margin-top: 10px; color: var(--muted); font-size: 11px; }
+
+    .primary-button, .secondary-button, .action-button {
+      min-height: 39px;
+      padding: 0 14px;
+      border-radius: 9px;
+      border: 1px solid var(--line-strong);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .primary-button, .action-button { background: var(--inverse); color: var(--inverse-text); border-color: var(--inverse); }
+    .secondary-button { background: var(--surface); color: var(--text); }
+    .action-button.pink-action { background: var(--pink); color: white; border-color: var(--pink); }
+    .action-button.purple-action { background: var(--purple); color: white; border-color: var(--purple); }
+
+    .field label { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; color: var(--muted); font-size: 9px; font-weight: 750; }
+    .field input {
+      width: 100%;
+      height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      outline: 0;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 12px;
+    }
+    .field input:focus { border-color: var(--text); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 8%, transparent); }
+    .field input::placeholder { color: var(--subtle); }
+
+    .form-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; }
+    .form-row.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .form-row.four { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    .form-actions { display: flex; align-items: center; gap: 8px; margin-top: 11px; }
+
+    .result-panel {
+      min-height: 0;
+      display: grid;
+      align-content: center;
+      place-items: center;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      text-align: center;
+    }
+    .result-panel[hidden] { display: none; }
+    .result-panel small { color: var(--muted); font-size: 9px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .result-panel strong { display: block; margin-top: 7px; font-size: clamp(38px, 5vw, 64px); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.05em; }
+    .result-panel p { max-width: 460px; margin: 10px auto 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+
+    .empty-panel {
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--surface-2);
+      color: var(--muted);
+      text-align: center;
+    }
+    .empty-panel strong { display: block; color: var(--text); font-size: 12px; }
+    .empty-panel span { display: block; margin-top: 5px; font-size: 10px; }
+
+    .window-list { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); gap: 8px; }
+    .window {
+      min-height: 59px;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 2px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface-2);
+      text-align: center;
+    }
+    .window strong { font-size: 12px; font-variant-numeric: tabular-nums; }
+    .window span { color: var(--muted); font-size: 8px; text-transform: uppercase; }
+    .window.primary-window.active { border-color: var(--pink); background: var(--pink-soft); }
+    .window.primary-window.active strong, .window.primary-window .window-kind { color: var(--pink); }
+    .window.bonus-window.active { border-color: var(--purple); background: var(--purple-soft); }
+    .window.bonus-window.active strong, .window.bonus-window .window-kind { color: var(--purple); }
+
+    .timeline-shell { padding: 2px; overflow: hidden; }
+    .timeline { display: grid; grid-template-columns: repeat(60, minmax(4px,1fr)); gap: 2px; }
+    .minute { height: 42px; border-radius: 4px; background: var(--surface-3); position: relative; }
+    .minute.primary { background: var(--pink-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pink) 45%, transparent); }
+    .minute.bonus { background: var(--purple-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--purple) 45%, transparent); }
+    .minute.overlap { background: linear-gradient(180deg, var(--pink-soft), var(--purple-soft)); }
+    .minute.current { outline: 2px solid var(--text); outline-offset: 1px; }
+    .timeline-labels { display: flex; justify-content: space-between; margin-top: 6px; color: var(--muted); font-size: 8px; }
+
+    .progress-card { padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+    .progress-head, .progress-meta { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .progress-head span, .progress-meta span { color: var(--muted); font-size: 9px; }
+    .progress-head strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+    .progress-track { height: 9px; margin: 11px 0 8px; overflow: hidden; border-radius: 999px; background: var(--surface-3); }
+    .progress-fill { width: 0; height: 100%; background: var(--text); transition: width 200ms ease; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+    .stat { padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+    .stat span, .stat strong { display: block; }
+    .stat span { color: var(--muted); font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+    .stat strong { margin-top: 4px; font-size: 14px; font-variant-numeric: tabular-nums; }
+
+    .notice { padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+    .notice + .notice { margin-top: 8px; }
+    .notice-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .notice-head strong { font-size: 11px; }
+    .notice p { margin: 6px 0 0; color: var(--muted); font-size: 9px; line-height: 1.55; }
+
+    .cluster-strip { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 7px; }
+    .cluster-chip { padding: 11px 8px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); text-align: center; }
+    .cluster-chip span, .cluster-chip strong { display: block; }
+    .cluster-chip span { color: var(--muted); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+    .cluster-chip strong { margin-top: 3px; font-size: 13px; font-variant-numeric: tabular-nums; }
+
+    .action-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .mini-button { min-height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); font-size: 10px; font-weight: 800; cursor: pointer; }
+    .mini-button.win { background: var(--green); color: white; border-color: var(--green); }
+    .mini-button.loss { background: var(--red); color: white; border-color: var(--red); }
+
+    .table-shell { min-height: 0; margin-top: 10px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; }
+    .table-scroll { max-height: 205px; overflow: auto; scrollbar-width: thin; }
+    table { width: 100%; min-width: 650px; border-collapse: collapse; }
+    th, td { padding: 10px 11px; text-align: left; border-bottom: 1px solid var(--line); font-size: 10px; font-variant-numeric: tabular-nums; }
+    th { position: sticky; top: 0; z-index: 1; background: var(--surface-2); color: var(--muted); font-size: 8px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .empty-cell { padding: 24px 12px; color: var(--muted); text-align: center; }
+
+    .target-layout { min-height: 0; display: grid; grid-template-columns: minmax(0,1.45fr) minmax(300px,.55fr); gap: 14px; overflow: hidden; }
+    .target-main { min-height: 0; display: grid; grid-template-rows: auto minmax(0,1fr); gap: 12px; overflow: hidden; }
+    .target-side { min-height: 0; overflow: hidden; }
+
+    .measure-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+    .measure { padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+    .measure span, .measure strong { display: block; }
+    .measure span { color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    .measure strong { margin-top: 5px; font-size: 16px; font-variant-numeric: tabular-nums; }
+
+    .class-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+    .class-list { display: grid; gap: 8px; }
+    .class-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+    .class-item strong, .class-item span { display: block; }
+    .class-item strong { font-size: 11px; }
+    .class-item span { margin-top: 2px; color: var(--muted); font-size: 9px; }
+
+    .activity-list {
+      min-height: 0;
+      display: grid;
+      gap: 7px;
+      max-height: 100%;
+      overflow: auto;
+      padding-right: 3px;
+      scrollbar-width: thin;
+    }
+    .activity-item {
+      display: grid;
+      grid-template-columns: 74px 10px minmax(0,1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+    }
+    .activity-time { color: var(--muted); font-size: 9px; font-variant-numeric: tabular-nums; }
+    .activity-dot { width: 8px; height: 8px; margin-top: 3px; border-radius: 50%; background: var(--text); }
+    .activity-dot.win { background: var(--green); }
+    .activity-dot.loss { background: var(--red); }
+    .activity-dot.pink { background: var(--pink); }
+    .activity-dot.purple { background: var(--purple); }
+    .activity-copy strong, .activity-copy span { display: block; }
+    .activity-copy strong { font-size: 10px; }
+    .activity-copy span { margin-top: 2px; color: var(--muted); font-size: 9px; line-height: 1.45; }
+
+    .focus-label { display: none; }
+    body.focus-mode .app { grid-template-columns: 1fr; }
+    body.focus-mode .sidebar { display: none; }
+    body.focus-mode .topbar { padding-inline: 18px; }
+    body.focus-mode main { padding-inline: clamp(16px, 4vw, 54px); }
+    body.focus-mode .focus-label { display: inline; }
+    body.focus-mode #focusToggle { border-color: var(--text); background: var(--inverse); color: var(--inverse-text); }
+
+    .overlay { position: fixed; inset: 0; display: none; z-index: 45; background: rgba(0,0,0,.45); }
+
+    .developer-layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .developer-profile {
+      display: grid;
+      gap: 14px;
+    }
+
+    .developer-identity {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .developer-avatar {
+      width: 68px;
+      height: 68px;
+      flex: 0 0 68px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line-strong);
+      border-radius: 18px;
+      background: var(--inverse);
+      color: var(--inverse-text);
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      overflow: hidden;
+    }
+
+    .developer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .developer-meta strong, .developer-meta span { display: block; }
+    .developer-meta strong { font-size: 17px; letter-spacing: -.025em; }
+    .developer-meta span { margin-top: 3px; color: var(--muted); font-size: 10px; }
+
+    .developer-contact {
+      display: grid;
+      gap: 8px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+      font-size: 10px;
+    }
+
+    .contact-row span { color: var(--muted); }
+    .contact-row a { color: var(--text); text-decoration: none; font-weight: 800; word-break: break-all; }
+    .contact-row a:hover { text-decoration: underline; }
+
+    .developer-message {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-2);
+    }
+
+    .developer-message small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      font-weight: 850;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+    .developer-message p { margin: 7px 0 0; color: var(--text); font-size: 11px; line-height: 1.6; }
+
+    .external-platforms {
+      grid-column: 1 / -1;
+    }
+
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .platform-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 54px;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 850;
+      transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+    }
+
+    .platform-link:hover {
+      border-color: var(--line-strong);
+      transform: translateY(-1px);
+    }
+
+    .platform-link span {
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 700;
+    }
+
+    .platform-note {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.55;
+    }
+
+    .legal-precaution {
+      border-color: var(--line-strong);
+      background: var(--surface);
+    }
+
+    .precaution-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .precaution-item {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+    }
+
+    .precaution-number {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--inverse);
+      color: var(--inverse-text);
+      font-size: 9px;
+      font-weight: 900;
+    }
+
+    .precaution-item strong { display: block; font-size: 11px; }
+    .precaution-item p { margin: 3px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+
+    @media (max-width: 1120px) {
+      body { overflow: auto; }
+      .content-area { height: auto; min-height: 100vh; }
+      main { height: auto; min-height: calc(100vh - var(--topbar)); overflow: visible; }
+      .view, .view.active { height: auto; overflow: visible; }
+      .view.active { display: block; }
+      .page-head { margin-bottom: 14px; }
+      .target-layout, .hero { grid-template-columns: 1fr; }
+      .hero-side { border-left: 0; border-top: 1px solid var(--line); }
+      .span-8, .span-7, .span-6, .span-5, .span-4 { grid-column: span 12; }
+      .window-list { grid-template-columns: repeat(4,minmax(0,1fr)); }
+    }
+
+    @media (max-width: 820px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; inset: 0 auto 0 0; width: min(84vw, 280px); transform: translateX(-105%); transition: transform 190ms ease; box-shadow: var(--shadow); }
+      body.sidebar-open .sidebar { transform: translateX(0); }
+      body.sidebar-open .overlay { display: block; }
+      .mobile-menu { display: grid; }
+      .topbar { padding: 0 15px; }
+      main { padding: 18px 15px 28px; }
+      .clock span { display: none; }
+      .measure-grid, .stats, .form-row.four { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .platform-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+      .page-head { align-items: flex-start; flex-direction: column; }
+      .page-head h1 { font-size: 31px; }
+      .form-row, .form-row.two, .form-row.four, .measure-grid, .stats, .class-grid { grid-template-columns: 1fr; }
+      .window-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .cluster-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .topbar-actions .clock { display: none; }
+      .hero-copy { padding: 28px 22px; }
+      .hero-copy h2 { font-size: 42px; }
+    }
+
+    @media (max-width: 900px) {
+      .developer-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Mobile-first layout */
+    .status-text {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 750;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Phones are the default layout. */
+    body { overflow: auto; }
+    .app { min-height: 100dvh; height: auto; grid-template-columns: 1fr; }
+    .content-area { min-width: 0; height: auto; min-height: 100dvh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(88vw, 300px);
+      height: 100dvh;
+      padding: 14px 12px;
+      transform: translateX(-105%);
+      transition: transform 190ms ease;
+      box-shadow: var(--shadow);
+    }
+    body.sidebar-open .sidebar { transform: translateX(0); }
+    body.sidebar-open .overlay { display: block; }
+    .mobile-menu { display: grid; }
+    .nav-button { min-height: 44px; font-size: 13px; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 35;
+      height: 58px;
+      padding: 0 12px;
+      gap: 10px;
+    }
+    .topbar-left, .topbar-actions { gap: 8px; }
+    .icon-button { width: 38px; height: 38px; }
+    .route small { display: none; }
+    .route strong { margin: 0; font-size: 14px; }
+    .topbar-actions .clock { display: none; }
+    main {
+      height: auto;
+      min-height: calc(100dvh - 58px);
+      padding: 14px 12px 24px;
+      overflow: visible;
+    }
+    .view, .view.active { height: auto; overflow: visible; }
+    .view.active { display: block; }
+    .page-head {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .page-head h1 { margin-top: 4px; font-size: 28px; line-height: 1.04; }
+    .page-head p { margin-top: 6px; font-size: 11px; line-height: 1.5; }
+    .eyebrow { font-size: 8px; }
+    .content-fit { overflow: visible; gap: 10px; }
+    .grid, .class-grid, .target-layout, .developer-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .span-12, .span-8, .span-7, .span-6, .span-5, .span-4 { grid-column: 1 / -1; }
+    .card { border-radius: 12px; box-shadow: none; }
+    .card-header { min-height: 48px; padding: 10px 12px; }
+    .card-header h2 { font-size: 13px; }
+    .card-body { padding: 12px; }
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr;
+      border-radius: 14px;
+      box-shadow: none;
+    }
+    .hero-copy { padding: 22px 16px; }
+    .hero-copy h2 { font-size: clamp(34px, 12vw, 48px); }
+    .hero-copy p { margin-top: 12px; font-size: 11px; }
+    .hero-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 16px; }
+    .hero-side { min-height: 140px; padding: 18px; border-left: 0; border-top: 1px solid var(--line); }
+    .hero-clock strong { font-size: clamp(44px, 16vw, 68px); }
+    .primary-button, .secondary-button, .action-button, .mini-button { min-height: 44px; }
+    .form-row, .form-row.two, .form-row.four, .measure-grid, .stats { grid-template-columns: 1fr; }
+    .field input { min-height: 46px; }
+    .window-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cluster-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .platform-grid { grid-template-columns: 1fr; }
+    .developer-identity { align-items: flex-start; }
+    .developer-avatar { width: 58px; height: 58px; flex-basis: 58px; border-radius: 15px; }
+    .table-shell, .table-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .external-platforms { grid-column: 1 / -1; }
+
+    @media (min-width: 601px) {
+      main { padding: 18px 18px 30px; }
+      .form-row.two, .measure-grid, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .window-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .cluster-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .hero-actions { display: flex; }
+      .platform-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    }
+
+    @media (min-width: 821px) {
+      body { overflow: hidden; }
+      .app { height: 100vh; min-height: 0; grid-template-columns: var(--sidebar) minmax(0, 1fr); }
+      .content-area { height: 100vh; min-height: 0; }
+      .sidebar {
+        position: static;
+        width: auto;
+        height: 100vh;
+        transform: none;
+        box-shadow: none;
+        padding: 18px 14px;
+      }
+      .mobile-menu { display: none; }
+      .overlay { display: none !important; }
+      .topbar { position: static; height: var(--topbar); padding: 0 22px; }
+      .route small { display: block; }
+      .topbar-actions .clock { display: block; }
+      main { height: calc(100vh - var(--topbar)); min-height: 0; padding: 20px 22px 22px; overflow: hidden; }
+      .view { height: 100%; overflow: hidden; }
+      .view.active { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px; height: 100%; }
+      .page-head { flex-direction: row; align-items: flex-end; margin-bottom: 0; }
+      .page-head h1 { font-size: clamp(30px, 3vw, 40px); }
+      .content-fit { min-height: 0; overflow: hidden; }
+      .grid { grid-template-columns: repeat(12, minmax(0,1fr)); gap: 12px; }
+      .span-12 { grid-column: span 12; }
+      .span-8 { grid-column: span 8; }
+      .span-7 { grid-column: span 7; }
+      .span-6 { grid-column: span 6; }
+      .span-5 { grid-column: span 5; }
+      .span-4 { grid-column: span 4; }
+      .hero { grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); border-radius: 18px; box-shadow: var(--shadow); }
+      .hero-copy { padding: clamp(28px, 4vw, 54px); }
+      .hero-copy h2 { font-size: clamp(40px, 5vw, 66px); }
+      .hero-side { min-height: 280px; border-left: 1px solid var(--line); border-top: 0; }
+      .target-layout { grid-template-columns: minmax(0, 1.4fr) minmax(280px, .6fr); }
+      .developer-layout { grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr); }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">AI</div>
+        <div><strong>Aviator Timing</strong><span>Timing and tracking</span></div>
+      </div>
+
+      <div class="nav-label">Menu</div>
+      <nav class="nav">
+        <button class="nav-button active" type="button" data-view="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path></svg>
+          Home
+        </button>
+        <button class="nav-button" type="button" data-view="timing">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+          Timing windows
+        </button>
+        <button class="nav-button" type="button" data-view="pink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 7h14M7 12h10M9 17h6"></path></svg>
+          <span class="pink-text">Pink</span> timing
+        </button>
+        <button class="nav-button" type="button" data-view="cluster">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="12" r="1.7"></circle><circle cx="10" cy="12" r="1.7"></circle><circle cx="15" cy="10" r="1.7"></circle><circle cx="20" cy="7" r="1.7"></circle></svg>
+          Cluster effect
+        </button>
+        <button class="nav-button" type="button" data-view="target">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="1"></circle></svg>
+          Target session
+        </button>
+        <button class="nav-button" type="button" data-view="staking">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 18h16M6 15l3-4 3 2 5-7 2 2"></path></svg>
+          Staking plan
+        </button>
+        <button class="nav-button" type="button" data-view="profitloss">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 19V9M12 19V5M19 19v-7"></path><path d="M3 19h18"></path></svg>
+          Profit / Loss
+        </button>
+        <button class="nav-button" type="button" data-view="statistics">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V10M10 19V5M16 19v-7M22 19H2"></path></svg>
+          Statistics
+        </button>
+        <button class="nav-button" type="button" data-view="activity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 7h12M6 12h12M6 17h8"></path><circle cx="3" cy="7" r="1"></circle><circle cx="3" cy="12" r="1"></circle><circle cx="3" cy="17" r="1"></circle></svg>
+          Activity
+        </button>
+        <button class="nav-button" type="button" data-view="developer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="8" r="3"></circle><path d="M5 20c.8-4 3-6 7-6s6.2 2 7 6"></path></svg>
+          Developer
+        </button>
+        <button class="nav-button" type="button" data-view="classification">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 6h16M4 12h11M4 18h8"></path></svg>
+          Classification
+        </button>
+        <button class="nav-button" type="button" data-view="planner">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
+          Rollover planner
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-row"><span>Status</span><strong>Online</strong></div>
+        <div class="status-row"><span>Version</span><strong>1.2.34</strong></div>
+      </div>
+    </aside>
+
+    <div class="overlay" id="overlay"></div>
+
+    <div class="content-area">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button mobile-menu" id="menuButton" type="button" aria-label="Open menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+          </button>
+          <div class="route"><small>Menu</small><strong id="routeTitle">Home</strong></div>
+        </div>
+        <div class="topbar-actions">
+          <div class="clock"><strong id="clock">--:--:--</strong><span id="date">Loading</span></div>
+          <button class="icon-button" id="focusToggle" type="button" aria-label="Toggle focus mode" title="Focus mode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M3 16v5h5"></path></svg>
+          </button>
+          <button class="icon-button" id="themeToggle" type="button" aria-label="Toggle theme">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="view active" data-page="home">
+          <div class="page-head">
+            <div><div class="eyebrow">Control center</div><h1>One action at a time.</h1><p>No formulas, no demo values, no stacked dashboard. Choose a section and act only when you are ready.</p></div>
+            
+          </div>
+          <div class="hero">
+            <div class="hero-copy">
+              <div class="eyebrow">Overview</div>
+              <h2>Focus on the next decision.</h2>
+              <p>Timing, <span class="pink-text">pink</span> signals, cluster timing, targets, staking and results are separated into focused sections.</p>
+              <div class="hero-actions">
+                <button class="primary-button" type="button" data-open-view="target">Open target session</button>
+                <button class="secondary-button" type="button" data-open-view="pink">Open <span class="pink-text">pink</span> timing</button>
+              </div>
+            </div>
+            <div class="hero-side"><div class="hero-clock"><strong id="heroClock">--:--</strong><span id="heroDate">Current time</span></div></div>
+          </div>
+        </section>
+
+        <section class="view" data-page="timing">
+          <div class="page-head"><div><div class="eyebrow">Timing</div><h1>Timing windows</h1><p>Only current timing state and configured windows are shown.</p></div><span class="status-text" id="timingState">Monitoring</span></div>
+          <div class="content-fit">
+            <div class="grid">
+              <section class="card span-6">
+                <div class="card-header"><div><h2><span class="pink-text">Pink</span> windows</h2><p>Primary timing intervals</p></div></div>
+                <div class="card-body"><div class="window-list" id="primaryWindows"></div></div>
+              </section>
+              <section class="card span-6">
+                <div class="card-header"><div><h2><span class="purple-text">Purple</span> windows</h2><p>Secondary timing intervals</p></div></div>
+                <div class="card-body"><div class="window-list" id="bonusWindows"></div></div>
+              </section>
+              <section class="card span-12">
+                <div class="card-header"><div><h2>Current hour</h2><p id="timingMessage">Monitoring configured windows.</p></div><span class="status-text" id="currentMinute">--</span></div>
+                <div class="card-body"><div class="timeline-shell"><div class="timeline" id="timeline"></div><div class="timeline-labels"><span>00</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>59</span></div></div></div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-page="pink">
+          <div class="page-head"><div><div class="eyebrow"><span class="pink-text">Pink</span> timing</div><h1>Find the next <span class="pink-text">pink</span> time</h1><p>Enter the last two observed <span class="pink-text">pink</span> times. The calculation stays hidden.</p></div></div>
+          <div class="grid">
+            <section class="card span-5">
+              <div class="card-header"><div><h2>Observed <span class="pink-text">pink</span> times</h2><p>Nothing is calculated until you ask.</p></div></div>
+              <div class="card-body">
+                <div class="form-row two">
+                  <div class="field"><label for="pinkA"><span>Previous <span class="pink-text">pink</span></span><span>Time</span></label><input id="pinkA" type="time" step="60"></div>
+                  <div class="field"><label for="pinkB"><span>Latest <span class="pink-text">pink</span></span><span>Time</span></label><input id="pinkB" type="time" step="60"></div>
+                </div>
+                <div class="form-actions"><button class="action-button pink-action" id="calculatePink" type="button">Find next pink</button></div>
+              </div>
+            </section>
+            <section class="span-7 result-panel" id="pinkResult" hidden>
+              <div><small>Next projected <span class="pink-text">pink</span></small><strong class="pink-text" id="pinkNext">--:--</strong><p id="pinkResultText">Projection ready.</p></div>
+            </section>
+            <section class="span-7 empty-panel" id="pinkEmpty"><div><strong>No projection yet</strong><span>Enter two observed times and choose Find next pink.</span></div></section>
+          </div>
+        </section>
+
+        <section class="view" data-page="cluster">
+          <div class="page-head"><div><div class="eyebrow">Cluster effect</div><h1>Generate a timing cluster</h1><p>The cluster rule is applied privately. You only see the resulting time markers.</p></div></div>
+          <div class="grid">
+            <section class="card span-5">
+              <div class="card-header"><div><h2>Cluster anchor</h2><p>Choose the time where the effect begins.</p></div></div>
+              <div class="card-body">
+                <div class="field"><label for="clusterAnchor"><span>Anchor time</span><span>Time</span></label><input id="clusterAnchor" type="time" step="60"></div>
+                <div class="form-actions"><button class="action-button" id="generateCluster" type="button">Generate cluster</button></div>
+              </div>
+            </section>
+            <section class="card span-7" id="clusterResult" hidden>
+              <div class="card-header"><div><h2>Cluster markers</h2><p>Generated from your anchor.</p></div></div>
+              <div class="card-body"><div class="cluster-strip" id="clusterStrip"></div></div>
+            </section>
+            <section class="span-7 empty-panel" id="clusterEmpty"><div><strong>No cluster yet</strong><span>Choose an anchor time and generate the markers.</span></div></section>
+          </div>
+        </section>
+
+        <section class="view" data-page="target">
+          <div class="page-head"><div><div class="eyebrow">Session control</div><h1>Target session</h1><p>Set your own target, record real outcomes, and watch progress without exposing the calculations.</p></div><span class="status-text" id="sessionStateTag">Not started</span></div>
+          <div class="target-layout">
+            <div class="target-main">
+              <section class="card">
+                <div class="card-header"><div><h2>Session setup</h2><p>Values stay inactive until Start session is selected.</p></div></div>
+                <div class="card-body">
+                  <div class="form-row four">
+                    <div class="field"><label for="profitTarget"><span>Profit target</span><span>TZS</span></label><input id="profitTarget" type="number" min="1" step="100" placeholder="10000"></div>
+                    <div class="field"><label for="sessionLimit"><span>Session limit</span><span>TZS</span></label><input id="sessionLimit" type="number" min="0" step="100" placeholder="5000"></div>
+                    <div class="field"><label for="roundEntry"><span>Amount used</span><span>TZS</span></label><input id="roundEntry" type="number" min="0" step="100" placeholder="Enter amount"></div>
+                    <div class="field"><label for="roundReturn"><span>Return received</span><span>TZS</span></label><input id="roundReturn" type="number" min="0" step="100" placeholder="Enter return"></div>
+                  </div>
+                  <div class="action-row">
+                    <button class="mini-button" id="startSession" type="button">Start session</button>
+                    <button class="mini-button win" id="recordWin" type="button">Record win</button>
+                    <button class="mini-button loss" id="recordLoss" type="button">I lost</button>
+                    <button class="mini-button" id="clearSession" type="button">End session</button>
+                  </div>
+                  <div class="progress-card" id="targetProgressCard" style="margin-top:10px" hidden>
+                    <div class="progress-head"><span>Target progress</span><strong id="targetProgressPercent">0%</strong></div>
+                    <div class="progress-track"><div class="progress-fill" id="targetProgressFill"></div></div>
+                    <div class="progress-meta"><span id="targetRealizedText">TZS 0 realized</span><span id="targetRemainingText">Remaining</span></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card">
+                <div class="card-header"><div><h2>Session history</h2><p>Only actions you record appear here.</p></div><span class="status-text" id="sessionCount">0 entries</span></div>
+                <div class="card-body">
+                  <div class="table-shell" style="margin-top:0"><div class="table-scroll"><table><thead><tr><th>Time</th><th>Result</th><th>Used</th><th>Returned</th><th>Margin</th></tr></thead><tbody id="sessionLedger"><tr><td class="empty-cell" colspan="5">No session results yet.</td></tr></tbody></table></div></div>
+                </div>
+              </section>
+            </div>
+
+            <aside class="target-side">
+              <div class="notice"><div class="notice-head"><strong><span class="pink-text">Pink</span> window</strong><span class="status-text" id="targetWindowState">Checking</span></div><p id="targetWindowMessage">Monitoring the next configured window.</p></div>
+              <div class="notice">
+                <div class="notice-head"><strong>Cluster effect</strong></div>
+                <p>Apply the cluster effect to an anchor time when you choose.</p>
+                <div class="field" style="margin-top:9px"><label for="targetClusterAnchor"><span>Anchor time</span><span>Time</span></label><input id="targetClusterAnchor" type="time" step="60"></div>
+                <div class="action-row"><button class="mini-button" id="targetGenerateCluster" type="button">Use cluster effect</button></div>
+                <div class="cluster-strip" id="targetClusterStrip" style="margin-top:9px" hidden></div>
+              </div>
+              <div class="notice"><div class="notice-head"><strong>Session note</strong></div><p id="sessionMessage">Start a session when you are ready. Results appear only after you record them.</p></div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" data-page="staking">
+          <div class="page-head"><div><div class="eyebrow">Session preparation</div><h1>Staking plan</h1><p>Enter your own values. The internal calculations remain hidden until you build the plan.</p></div></div>
+          <div class="content-fit">
+            <section class="card">
+              <div class="card-header"><div><h2>Plan setup</h2><p>No demo plan is loaded.</p></div></div>
+              <div class="card-body">
+                <div class="form-row four">
+                  <div class="field"><label for="stakingBankroll"><span>Available bankroll</span><span>TZS</span></label><input id="stakingBankroll" type="number" min="0" step="100" placeholder="Enter bankroll"></div>
+                  <div class="field"><label for="stakingAmount"><span>Stake per entry</span><span>TZS</span></label><input id="stakingAmount" type="number" min="0" step="100" placeholder="Enter stake"></div>
+                  <div class="field"><label for="stakingRounds"><span>Planned entries</span><span>Count</span></label><input id="stakingRounds" type="number" min="1" max="100" step="1" placeholder="Entries"></div>
+                  <div class="field"><label for="stakingCashout"><span>Your cash-out</span><span>Multiplier</span></label><input id="stakingCashout" type="number" min="1" step="0.01" placeholder="e.g. 2.00"></div>
+                </div>
+                <div class="form-actions"><button class="action-button" id="buildStakingPlan" type="button">Build plan</button></div>
+                <div id="stakingOutput" hidden>
+                  <div class="measure-grid" style="margin-top:11px">
+                    <div class="measure"><span>Planned exposure</span><strong id="stakingExposure">TZS 0</strong></div>
+                    <div class="measure"><span>Bankroll remaining</span><strong id="stakingRemaining">TZS 0</strong></div>
+                    <div class="measure"><span>Return on a win</span><strong id="stakingWinReturn">TZS 0</strong></div>
+                    <div class="measure"><span>Margin on a win</span><strong id="stakingWinNet">TZS 0</strong></div>
+                  </div>
+                  <div class="table-shell"><div class="table-scroll"><table><thead><tr><th>Entry</th><th>Stake</th><th>Your cash-out</th><th>Return</th><th>Margin</th></tr></thead><tbody id="stakingTable"></tbody></table></div></div>
+                </div>
+                <div class="empty-panel" id="stakingEmpty" style="margin-top:11px"><div><strong>No plan yet</strong><span>Fill the inputs and build the plan when you are ready.</span></div></div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" data-page="profitloss">
+          <div class="page-head"><div><div class="eyebrow">Session measurement</div><h1>Profit and loss</h1><p>This section stays empty until you record session results.</p></div><span class="status-text" id="plStatus">No entries</span></div>
+          <div class="content-fit">
+            <div class="empty-panel" id="plEmpty"><div><strong>No recorded results</strong><span>Use Target session first. Your measurements will appear here automatically.</span></div></div>
+            <div id="plOutput" hidden>
+              <div class="measure-grid">
+                <div class="measure"><span>Winning margin</span><strong class="win-text" id="plGrossProfit">TZS 0</strong></div>
+                <div class="measure"><span>Losses</span><strong class="loss-text" id="plGrossLoss">TZS 0</strong></div>
+                <div class="measure"><span>Net result</span><strong id="plNet">TZS 0</strong></div>
+                <div class="measure"><span>Win rate</span><strong id="plWinRate">0%</strong></div>
+              </div>
+              <div class="table-shell"><div class="table-scroll"><table><thead><tr><th>#</th><th>Time</th><th>Result</th><th>Used</th><th>Returned</th><th>Net</th><th>Running</th></tr></thead><tbody id="profitLossLedger"></tbody></table></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-page="statistics">
+          <div class="page-head"><div><div class="eyebrow">Performance overview</div><h1>Statistics</h1><p>Only recorded activity is measured. Nothing appears here until you create real session results.</p></div><span class="status-text" id="statsStatus">No data</span></div>
+          <div class="content-fit">
+            <div class="empty-panel" id="statsEmpty"><div><strong>No statistics yet</strong><span>Start a session and record outcomes to build your statistics.</span></div></div>
+            <div id="statsOutput" hidden>
+              <div class="measure-grid">
+                <div class="measure"><span>Sessions</span><strong id="statsSessions">0</strong></div>
+                <div class="measure"><span>Wins</span><strong class="win-text" id="statsWins">0</strong></div>
+                <div class="measure"><span>Losses</span><strong class="loss-text" id="statsLosses">0</strong></div>
+                <div class="measure"><span>Win rate</span><strong id="statsWinRate">0%</strong></div>
+              </div>
+              <div class="measure-grid" style="margin-top:8px">
+                <div class="measure"><span>Net result</span><strong id="statsNet">TZS 0</strong></div>
+                <div class="measure"><span>Best session</span><strong class="win-text" id="statsBest">TZS 0</strong></div>
+                <div class="measure"><span>Largest loss</span><strong class="loss-text" id="statsLargestLoss">TZS 0</strong></div>
+                <div class="measure"><span>Total used</span><strong id="statsUsed">TZS 0</strong></div>
+              </div>
+              <div class="table-shell"><div class="table-scroll"><table><thead><tr><th>Session</th><th>Started</th><th>Entries</th><th>Wins</th><th>Losses</th><th>Net</th></tr></thead><tbody id="statsSessionTable"></tbody></table></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-page="activity">
+          <div class="page-head"><div><div class="eyebrow">Recorded actions</div><h1>Activity timeline</h1><p>A chronological view of actions you actually take in the application.</p></div><span class="status-text" id="activityCount">0 events</span></div>
+          <div class="content-fit">
+            <div class="empty-panel" id="activityEmpty"><div><strong>No activity yet</strong><span>Your actions will appear here after you use the app.</span></div></div>
+            <section class="card" id="activityOutput" hidden>
+              <div class="card-header"><div><h2>Timeline</h2><p>Newest events appear first.</p></div><button class="mini-button" id="clearActivity" type="button">Clear timeline</button></div>
+              <div class="card-body" style="min-height:0"><div class="activity-list" id="activityList"></div></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" data-page="developer">
+          <div class="page-head">
+            <div>
+              <div class="eyebrow">Application information</div>
+              <h1>Developer</h1>
+              <p>Developer contact, product message, and responsible-use precautions.</p>
+            </div>
+            
+          </div>
+
+          <div class="content-fit">
+            <div class="developer-layout">
+              <section class="card developer-profile">
+                <div class="card-header">
+                  <div><h2>Developer profile</h2><p>Application contact and release information.</p></div>
+                </div>
+                <div class="card-body">
+                  <div class="developer-identity">
+                    <div class="developer-avatar" aria-label="Developer avatar">DEV</div>
+                    <div class="developer-meta">
+                      <strong>Application Developer</strong>
+                      <span>Aviator Timing</span>
+                    </div>
+                  </div>
+
+                  <div class="developer-contact">
+                    <div class="contact-row">
+                      <span>Email</span>
+                      <a href="mailto:ramsny1@gmail.com">ramsny1@gmail.com</a>
+                    </div>
+                    <div class="contact-row">
+                      <span>Version</span>
+                      <strong>1.2.34</strong>
+                    </div>
+                  </div>
+
+                  <div class="developer-message">
+                    <small>Developer message</small>
+                    <p>This application is a personal session-tracking and timing-analysis utility. Its indicators are informational only and should never be treated as a promise, guarantee, or certainty of winning.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card">
+                <div class="card-header">
+                  <div><h2>Precautions</h2><p>Important conditions for responsible use.</p></div>
+                </div>
+                <div class="card-body">
+                  <div class="precaution-list">
+                    <div class="precaution-item legal-precaution"><div class="precaution-number">01</div><div><strong>Financial responsibility remains with the user</strong><p>All deposits, stakes, cash-outs, betting decisions, winnings, and losses are made at the user's own discretion and risk. The developer does not control betting outcomes and is not responsible for financial losses resulting from use of, or reliance on, this application.</p></div></div>
+                    <div class="precaution-item"><div class="precaution-number">02</div><div><strong>No outcome is guaranteed</strong><p>Timing windows, clusters, targets, staking tools, and projections are informational observations only. They cannot guarantee a multiplier, win, profit, or future result.</p></div></div>
+                    <div class="precaution-item"><div class="precaution-number">03</div><div><strong>Do not chase losses</strong><p>Choose a session limit before starting. Do not increase stakes simply to recover money lost in a previous round.</p></div></div>
+                    <div class="precaution-item"><div class="precaution-number">04</div><div><strong>Use accurate records</strong><p>Record actual wins and losses consistently so statistics represent what happened rather than assumptions or expectations.</p></div></div>
+                    <div class="precaution-item"><div class="precaution-number">05</div><div><strong>Adults and lawful use only</strong><p>Use the application only where gambling is legal for you and only if you meet the minimum legal age required by the relevant jurisdiction and platform.</p></div></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="card external-platforms">
+                <div class="card-header">
+                  <div><h2>External platforms</h2><p>Optional shortcuts to third-party betting services.</p></div>
+                  
+                </div>
+                <div class="card-body">
+                  <div class="platform-grid">
+                    <a class="platform-link" href="https://betbawa.bet/" target="_blank" rel="noopener noreferrer">BetBawa <span>Open site</span></a>
+                    <a class="platform-link" href="https://sportpesa.co.tz/" target="_blank" rel="noopener noreferrer">SportPesa <span>Open Tanzania site</span></a>
+                    <a class="platform-link" href="https://www.betway.co.tz/" target="_blank" rel="noopener noreferrer">Betway <span>Open Tanzania site</span></a>
+                  </div>
+                  <p class="platform-note">These websites are independent third-party services. Aviator Timing and its developer are not affiliated with, endorsed by, or responsible for their accounts, transactions, availability, terms, results, or losses. Opening a link leaves this application.</p>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-page="classification">
+          <div class="page-head"><div><div class="eyebrow">Classification</div><h1>Multiplier groups</h1><p>Semantic colors make each group immediately recognizable.</p></div></div>
+          <div class="class-grid">
+            <section class="card">
+              <div class="card-header"><div><h2 class="pink-text">Pink classification</h2><p>Pink multiplier ranges.</p></div></div>
+              <div class="card-body"><div class="class-list"><div class="class-item"><div><strong class="pink-text">Low Pink</strong><span>Below 20.00</span></div></div><div class="class-item"><div><strong class="pink-text">Midway Pink</strong><span>20.00 - 99.99</span></div></div><div class="class-item"><div><strong class="pink-text">High Pink</strong><span>100.00 and above</span></div></div></div></div>
+            </section>
+            <section class="card">
+              <div class="card-header"><div><h2 class="purple-text">Purple classification</h2><p>Purple multiplier ranges.</p></div></div>
+              <div class="card-body"><div class="class-list"><div class="class-item"><div><strong class="purple-text">Low Purple</strong><span>2.00 - 3.99</span></div></div><div class="class-item"><div><strong class="purple-text">High Purple</strong><span>4.00 - 9.99</span></div></div></div></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" data-page="planner">
+          <div class="page-head"><div><div class="eyebrow">Rollover</div><h1>Rollover planner</h1><p>Set your own values. The projection remains hidden until you build it.</p></div></div>
+          <div class="content-fit">
+            <section class="card">
+              <div class="card-header"><div><h2>Planner setup</h2><p>No automatic demo calculation.</p></div></div>
+              <div class="card-body">
+                <div class="form-row">
+                  <div class="field"><label for="startAmount"><span>Starting amount</span><span>Value</span></label><input id="startAmount" type="number" min="0.01" step="0.01" placeholder="Starting amount"></div>
+                  <div class="field"><label for="targetMultiplier"><span>Your cash-out</span><span>Multiplier</span></label><input id="targetMultiplier" type="number" min="1.01" step="0.01" placeholder="e.g. 1.20"></div>
+                  <div class="field"><label for="totalRounds"><span>Rounds</span><span>Count</span></label><input id="totalRounds" type="number" min="1" max="100" step="1" placeholder="Rounds"></div>
+                </div>
+                <div class="form-actions"><button class="action-button" id="buildRollover" type="button">Build projection</button></div>
+                <div id="rolloverOutput" hidden><div class="table-shell"><div class="table-scroll"><table><thead><tr><th>Round</th><th>Entered</th><th>Your cash-out</th><th>Projected return</th></tr></thead><tbody id="rolloverTable"></tbody></table></div></div></div>
+                <div class="empty-panel" id="rolloverEmpty" style="margin-top:11px"><div><strong>No projection yet</strong><span>Enter your values and build the projection.</span></div></div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const primaryWindows = [[2,3],[8,9],[20,22],[28,30],[38,39],[41,41],[55,57]];
+    const bonusWindows = [[57,59],[1,3],[20,22],[29,31],[40,42],[45,47],[50,52]];
+    const clusterIntervals = [1,1,2,3];
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => [...document.querySelectorAll(selector)];
+
+    const elements = {
+      clock: $("#clock"), date: $("#date"), heroClock: $("#heroClock"), heroDate: $("#heroDate"), routeTitle: $("#routeTitle"),
+      menuButton: $("#menuButton"), overlay: $("#overlay"), themeToggle: $("#themeToggle"), focusToggle: $("#focusToggle"),
+      primaryWindows: $("#primaryWindows"), bonusWindows: $("#bonusWindows"), timeline: $("#timeline"), currentMinute: $("#currentMinute"), timingState: $("#timingState"), timingMessage: $("#timingMessage"),
+      pinkA: $("#pinkA"), pinkB: $("#pinkB"), calculatePink: $("#calculatePink"), pinkResult: $("#pinkResult"), pinkEmpty: $("#pinkEmpty"), pinkNext: $("#pinkNext"), pinkResultText: $("#pinkResultText"),
+      clusterAnchor: $("#clusterAnchor"), generateCluster: $("#generateCluster"), clusterResult: $("#clusterResult"), clusterEmpty: $("#clusterEmpty"), clusterStrip: $("#clusterStrip"),
+      profitTarget: $("#profitTarget"), sessionLimit: $("#sessionLimit"), roundEntry: $("#roundEntry"), roundReturn: $("#roundReturn"), startSession: $("#startSession"), recordWin: $("#recordWin"), recordLoss: $("#recordLoss"), clearSession: $("#clearSession"), sessionStateTag: $("#sessionStateTag"), targetProgressCard: $("#targetProgressCard"), targetProgressPercent: $("#targetProgressPercent"), targetProgressFill: $("#targetProgressFill"), targetRealizedText: $("#targetRealizedText"), targetRemainingText: $("#targetRemainingText"), sessionLedger: $("#sessionLedger"), sessionCount: $("#sessionCount"), sessionMessage: $("#sessionMessage"), targetWindowState: $("#targetWindowState"), targetWindowMessage: $("#targetWindowMessage"), targetClusterAnchor: $("#targetClusterAnchor"), targetGenerateCluster: $("#targetGenerateCluster"), targetClusterStrip: $("#targetClusterStrip"),
+      stakingBankroll: $("#stakingBankroll"), stakingAmount: $("#stakingAmount"), stakingRounds: $("#stakingRounds"), stakingCashout: $("#stakingCashout"), buildStakingPlan: $("#buildStakingPlan"), stakingOutput: $("#stakingOutput"), stakingEmpty: $("#stakingEmpty"), stakingExposure: $("#stakingExposure"), stakingRemaining: $("#stakingRemaining"), stakingWinReturn: $("#stakingWinReturn"), stakingWinNet: $("#stakingWinNet"), stakingTable: $("#stakingTable"),
+      plStatus: $("#plStatus"), plEmpty: $("#plEmpty"), plOutput: $("#plOutput"), plGrossProfit: $("#plGrossProfit"), plGrossLoss: $("#plGrossLoss"), plNet: $("#plNet"), plWinRate: $("#plWinRate"), profitLossLedger: $("#profitLossLedger"),
+      statsStatus: $("#statsStatus"), statsEmpty: $("#statsEmpty"), statsOutput: $("#statsOutput"), statsSessions: $("#statsSessions"), statsWins: $("#statsWins"), statsLosses: $("#statsLosses"), statsWinRate: $("#statsWinRate"), statsNet: $("#statsNet"), statsBest: $("#statsBest"), statsLargestLoss: $("#statsLargestLoss"), statsUsed: $("#statsUsed"), statsSessionTable: $("#statsSessionTable"),
+      activityCount: $("#activityCount"), activityEmpty: $("#activityEmpty"), activityOutput: $("#activityOutput"), activityList: $("#activityList"), clearActivity: $("#clearActivity"),
+      startAmount: $("#startAmount"), targetMultiplier: $("#targetMultiplier"), totalRounds: $("#totalRounds"), buildRollover: $("#buildRollover"), rolloverOutput: $("#rolloverOutput"), rolloverEmpty: $("#rolloverEmpty"), rolloverTable: $("#rolloverTable")
     };
 
-    // Helpers
-    const isInPinkZone = (minute) => PINK_WINDOWS.some(([s,e]) => minute >= s && minute < e);
-    const isPeakSlot = (hour) => (hour >= 5 && hour < 9) || (hour >= 15 && hour < 20) || (hour >= 23 || hour < 2);
-    const getMarketStability = () => {
-        const last10 = state.outcomes.slice(-10).map(o => o.color);
-        const purpleCount = last10.filter(c => c === 'PURPLE').length;
-        const instalossCount = state.outcomes.slice(-10).filter(o => o.multiplier && o.multiplier <= 1.05).length;
-        if (purpleCount >= 6 && instalossCount === 0) return "Stable (Payout Phase)";
-        if (purpleCount >= 4) return "Moderate";
-        if (instalossCount > 0) return "Volatile / Drain Phase – Avoid betting";
-        return "Unstable – Wait for purple density";
-    };
-    const getAdvancedPatternBonus = () => {
-        const colors = state.outcomes.map(o => o.color);
-        if (colors.length < 3) return 0;
-        let bonus = 0;
-        const last3 = colors.slice(-3);
-        if (last3.length === 3 && last3.every(c => c === 'BLUE')) bonus += 12;
-        let consBlue = 0;
-        for (let i=colors.length-1; i>=0 && colors[i]==='BLUE'; i--) consBlue++;
-        if (consBlue >= 6) bonus += 15;
-        if (consBlue >= 9) bonus += 10;
-        if (colors.length >= 3 && colors[colors.length-3] === 'PURPLE' && colors[colors.length-2] === 'BLUE' && colors[colors.length-1] === 'PURPLE')
-            bonus += 8;
-        const lastOutcome = state.outcomes[state.outcomes.length-1];
-        if (lastOutcome && lastOutcome.multiplier && lastOutcome.multiplier <= 1.05) bonus -= 20;
-        if (lastOutcome && lastOutcome.multiplier && lastOutcome.multiplier >= 1.09 && lastOutcome.multiplier <= 1.11) bonus += 18;
-        return Math.max(-15, Math.min(30, bonus));
-    };
-    const computeProbability = (minuteFloat, hour) => {
-        const recentColors = state.outcomes.slice(-10).map(o => o.color);
-        const pinkCount = recentColors.filter(c => c === 'PINK').length;
-        const recentBonus = Math.min(20, pinkCount * 2);
-        let base = 20;
-        if (isInPinkZone(minuteFloat)) {
-            base = 75;
-            if ((minuteFloat >= 57 && minuteFloat < 60) || (minuteFloat >= 0 && minuteFloat < 3)) base = 80;
-        } else {
-            let minDist = 60;
-            for (let [s] of PINK_WINDOWS) { let dist = (s - minuteFloat + 60) % 60; if (dist < minDist) minDist = dist; }
-            const distanceFactor = Math.min(1.0, minDist / 15);
-            base = 60 * (1 - distanceFactor) + 20 * distanceFactor;
-        }
-        const slotBonus = isPeakSlot(hour) ? 5 : 0;
-        let patternBonus = getAdvancedPatternBonus();
-        const colorsSeq = state.outcomes.map(o => o.color);
-        if (colorsSeq.length >= 3 && colorsSeq.slice(-3).join(',') === 'BLUE,BLUE,PURPLE') patternBonus += 8;
-        if (colorsSeq.length >= 4 && colorsSeq.slice(-4).join(',') === 'BLUE,PINK,BLUE,PINK') patternBonus += 12;
-        if (colorsSeq.slice(-8).filter(c => c === 'PURPLE').length >= 4) patternBonus += 10;
-        let prob = base + recentBonus + slotBonus + patternBonus;
-        return Math.min(95, Math.max(15, Math.round(prob)));
-    };
-    const updateStrategyAdvice = () => {
-        const colors = state.outcomes.map(o => o.color);
-        const last5 = colors.slice(-5);
-        let consBlue = 0;
-        for (let i=colors.length-1; i>=0 && colors[i]==='BLUE'; i--) consBlue++;
-        const marketStable = getMarketStability();
-        let advice = "";
-        if (consBlue >= 6) advice = "Deep blue streak detected. High probability of a pink correction. Use double bet: auto cash-out at 2x to cover stake, let second bet ride to 10x+.";
-        else if (last5.filter(c=>c==='BLUE').length >= 3) advice = "Rule of Three Blues: Expect a purple reset in next 1-2 rounds. Conservative entry at 2x recommended.";
-        else if (last5.includes('PURPLE') && last5.includes('BLUE') && last5.lastIndexOf('PURPLE') > last5.lastIndexOf('BLUE')) advice = "Purple-Blue-Purple sandwich pattern. Next round likely purple. Target 2.5x.";
-        else if (marketStable.includes("Stable")) advice = "Market is in payout phase. Purple density high. Use aggressive compounding with auto cash-out at 1.5x.";
-        else if (marketStable.includes("Volatile")) advice = "Instaloss cluster detected. Stop betting for 5-10 minutes. Wait for purple recovery.";
-        else advice = "No strong pattern. Use conservative 1.2x-1.5x targets and observe history.";
-        dom.strategyAdvice.innerHTML = `Strategy Signal: ${advice}<br>Market status: ${marketStable}`;
-        dom.marketStatus.innerText = marketStable.split("–")[0];
-    };
-    const updateGauge = (value) => {
-        const circumference = 2 * Math.PI * 80;
-        let offset = circumference - (value / 100) * circumference;
-        dom.gaugeCircleFill.style.strokeDashoffset = offset;
-        dom.gaugePercent.textContent = value + '%';
-        dom.gaugeCircleFill.setAttribute('stroke', value < 30 ? '#E2728A' : '#E85D3A');
-    };
-    const updateStatus = (now) => {
-        const minuteFloat = now.getMinutes() + now.getSeconds() / 60;
-        dom.windowStatus.innerText = isInPinkZone(minuteFloat) ? "Yes" : "No";
-        dom.slotStatus.innerText = isPeakSlot(now.getHours()) ? "Peak hours" : "Standard";
-        dom.liveMinute.innerText = `Now: ${minuteFloat.toFixed(1)} min`;
-    };
-    const detectPatterns = () => {
-        const colors = state.outcomes.map(o => o.color);
-        if (colors.length < 2) return "Insufficient data. Add outcomes to enable pattern detection.";
-        const alerts = [];
-        const last4 = colors.slice(-4);
-        if (last4.length === 4 && last4.filter(c => c === 'BLUE').length >= 2 && last4[last4.length-1] === 'BLUE' && last4[last4.length-2] === 'BLUE')
-            alerts.push("Pattern 2.1: double blue after mix → possible pattern continuation");
-        let consBlue = 0;
-        for (let i=colors.length-1; i>=0 && colors[i]==='BLUE'; i--) consBlue++;
-        if (consBlue >= 6 && consBlue <= 8) alerts.push(`Pattern 2.2: ${consBlue} consecutive blues → elevated model signal`);
-        let consPurple = 0;
-        for (let i=colors.length-1; i>=0 && colors[i]==='PURPLE'; i--) consPurple++;
-        if (consPurple >= 5) alerts.push(`Pattern 2.3: ${consPurple} purples → pink above 20x likely`);
-        return alerts.length ? alerts.join(" · ") : "No active pattern detected. Continue observing.";
-    };
-    const renderHeatmap = () => {
-        const last30 = state.outcomes.slice(-30).map(o => o.color);
-        dom.heatmapContainer.innerHTML = last30.map((color, idx) => `<div class="heatmap-cell" data-color="${color}" title="Round ${idx+1}: ${color}"></div>`).join('');
-        if (last30.length === 0) dom.heatmapContainer.innerHTML = '<span class="small">No data</span>';
-    };
-    const updateHistoryUI = () => {
-        if (state.outcomes.length === 0) dom.historyLog.innerHTML = 'No rounds recorded.';
-        else {
-            dom.historyLog.innerHTML = state.outcomes.map((o,i) => `<span class="history-badge">${i+1}: ${o.color}${o.multiplier ? ` (${o.multiplier}x)` : ''}</span>`).join('');
-        }
-        dom.patternAlert.innerHTML = detectPatterns();
-        renderHeatmap();
-        updateStrategyAdvice();
-    };
-    const renderChart = () => {
-        if (state.currentChart) state.currentChart.destroy();
-        const ctx = dom.mainCanvas.getContext('2d');
-        const labels = state.probHistory.map(p => p.timestamp);
-        const values = state.probHistory.map(p => p.value);
-        let config = { responsive: true, maintainAspectRatio: true };
-        if (state.chartStyle === 'line' || state.chartStyle === 'wave') {
-            config.type = 'line';
-            config.data = { labels, datasets: [{ label: 'Probability %', data: values, borderColor: '#E85D3A', backgroundColor: state.chartStyle === 'wave' ? 'rgba(232,93,58,0.08)' : 'rgba(232,93,58,0.05)', borderWidth: 2, tension: state.chartStyle === 'wave' ? 0.4 : 0.2, fill: true, pointRadius: 3 }] };
-            dom.chartTitle.innerText = `Momentum Oscillator · ${state.chartStyle === 'wave' ? 'Wave' : 'Line'}`;
-        } else if (state.chartStyle === 'bar') {
-            config.type = 'bar';
-            config.data = { labels, datasets: [{ label: 'Probability %', data: values, backgroundColor: '#E85D3A' }] };
-            dom.chartTitle.innerText = 'Momentum Oscillator · Bar';
-        } else {
-            const ma = values.map((_,i) => i<2 ? null : (values[i-2]+values[i-1]+values[i])/3);
-            config.type = 'bar';
-            config.data = { labels, datasets: [{ label: 'Probability', data: values, type: 'bar', backgroundColor: '#7F8C6E' }, { label: 'MA(3)', data: ma, type: 'line', borderColor: '#E85D3A', borderWidth: 2, fill: false }] };
-            dom.chartTitle.innerText = 'Momentum Oscillator · Combo';
-        }
-        config.options = { scales: { y: { min: 0, max: 100, grid: { color: '#2A3A52' } }, x: { grid: { color: '#2A3A52' } } }, onClick: (e, active) => { if(active.length) dom.chartFeedback.innerText = `Selected: ${active[0].raw}%`; setTimeout(()=> dom.chartFeedback.innerText='', 1500); } };
-        state.currentChart = new Chart(ctx, config);
-    };
-    const pushProbability = (value) => {
-        const now = new Date();
-        const label = now.toLocaleTimeString('en-GB', { hour12: false, minute:'2-digit', second:'2-digit' });
-        state.probHistory.push({ timestamp: label, value });
-        if (state.probHistory.length > 40) state.probHistory.shift();
-        renderChart();
-    };
-    const refreshAll = () => {
-        const now = new Date();
-        const minuteFloat = now.getMinutes() + now.getSeconds() / 60;
-        const probability = computeProbability(minuteFloat, now.getHours());
-        updateGauge(probability);
-        let alertText = `Probability: ${probability}%`;
-        if (probability >= 70) alertText += ` – model signal elevated; do not treat as certainty`;
-        else if (probability < 40) alertText += ` – low model signal; continue observing`;
-        else alertText += ` – standard range`;
-        dom.alertMessage.innerHTML = alertText;
-        pushProbability(probability);
-        updateStatus(now);
-        dom.liveTimestamp.innerText = `Real-time · ${now.toLocaleTimeString('en-GB', { hour12: false })} UTC`;
-        let forecastHtml = '';
-        for (let i = 1; i <= 15; i++) {
-            let futureMin = minuteFloat + i;
-            let futureHour = now.getHours();
-            if (futureMin >= 60) { futureMin -= 60; futureHour = (futureHour + 1) % 24; }
-            const prob = computeProbability(futureMin, futureHour);
-            const barHeight = Math.max(16, prob * 0.6);
-            forecastHtml += `<div class="forecast-item"><div class="forecast-bar" style="height:${barHeight}px;"></div><div>+${i}</div><div>${prob}%</div></div>`;
-        }
-        dom.forecastContainer.innerHTML = forecastHtml;
-    };
+    const routeNames = { home:"Home", timing:"Timing windows", pink:"Pink timing", cluster:"Cluster effect", target:"Target session", staking:"Staking plan", profitloss:"Profit / Loss", statistics:"Statistics", activity:"Activity timeline", developer:"Developer", classification:"Classification", planner:"Rollover planner" };
 
-    // Pink interval model: C = B + (B - A) = 2B - A.
-    // This is an extrapolation of observed timing, not evidence that future
-    // independently randomized outcomes can be predicted.
-    const timeToMinutes = (value) => {
-        if (!value || !/^\d{2}:\d{2}$/.test(value)) return null;
-        const [h, m] = value.split(':').map(Number);
-        return h * 60 + m;
-    };
+    function openView(name) {
+      if (!routeNames[name]) return;
+      $$(".view").forEach((view) => view.classList.toggle("active", view.dataset.page === name));
+      $$(".nav-button").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
+      elements.routeTitle.textContent = routeNames[name];
+      history.replaceState(null, "", `#${name}`);
+      document.body.classList.remove("sidebar-open");
+    }
 
-    const minutesToTime = (total) => {
-        total = ((Math.round(total) % 1440) + 1440) % 1440;
-        return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-    };
+    function parseTime(value) {
+      if (!/^\d{2}:\d{2}$/.test(value)) return null;
+      const [hours, minutes] = value.split(":").map(Number);
+      if (hours > 23 || minutes > 59) return null;
+      return hours * 60 + minutes;
+    }
 
-    const getPinkMinuteSeries = () => state.pinkEvents
-        .map(e => new Date(e.time).getTime())
-        .filter(Number.isFinite)
-        .sort((a,b) => a-b);
+    function formatTime(totalMinutes) {
+      const normalized = ((totalMinutes % 1440) + 1440) % 1440;
+      const hours = Math.floor(normalized / 60);
+      const minutes = normalized % 60;
+      return `${String(hours).padStart(2,"0")}:${String(minutes).padStart(2,"0")}`;
+    }
 
-    const calculateIntervalProjection = (aText, bText) => {
-        const A = timeToMinutes(aText);
-        let B = timeToMinutes(bText);
-        if (A === null || B === null) return null;
-        if (B < A) B += 1440; // crosses midnight
-        const D = B - A;
-        const C = B + D;
-        return { A, B, D, C, previous: aText, current: bText, predicted: minutesToTime(C) };
-    };
+    function formatTZS(value) {
+      const amount = Number(value) || 0;
+      const sign = amount < 0 ? "-" : "";
+      return `${sign}TZS ${Math.abs(amount).toLocaleString("en-TZ", { maximumFractionDigits: 0 })}`;
+    }
 
-    const getHistoricalIntervals = () => {
-        const series = getPinkMinuteSeries();
-        const gaps = [];
-        for (let i = 1; i < series.length; i++) {
-            const d = (series[i] - series[i-1]) / 60000;
-            if (d >= 0 && d <= 24 * 60) gaps.push(d);
+    function inWindow(minute, windows) { return windows.some(([start,end]) => minute >= start && minute <= end); }
+
+    function buildWindowCards(container, windows, kind) {
+      const fragment = document.createDocumentFragment();
+      for (const [start,end] of windows) {
+        const node = document.createElement("div");
+        node.className = `window ${kind}-window`;
+        node.dataset.start = start;
+        node.dataset.end = end;
+        const range = start === end ? String(start).padStart(2,"0") : `${String(start).padStart(2,"0")}-${String(end).padStart(2,"0")}`;
+        const label = kind === "primary" ? "Pink" : "Purple";
+        node.innerHTML = `<strong>${range}</strong><span class="window-kind ${kind === "primary" ? "pink-text" : "purple-text"}">${label}</span>`;
+        fragment.appendChild(node);
+      }
+      container.replaceChildren(fragment);
+    }
+
+    function buildTimeline() {
+      const fragment = document.createDocumentFragment();
+      for (let minute = 0; minute < 60; minute += 1) {
+        const node = document.createElement("div");
+        const pink = inWindow(minute, primaryWindows);
+        const purple = inWindow(minute, bonusWindows);
+        node.className = "minute";
+        if (pink && purple) node.classList.add("overlap");
+        else if (pink) node.classList.add("primary");
+        else if (purple) node.classList.add("bonus");
+        node.dataset.minute = minute;
+        fragment.appendChild(node);
+      }
+      elements.timeline.replaceChildren(fragment);
+    }
+
+    function getNextPrimaryWindow(now) {
+      const minute = now.getMinutes();
+      const second = now.getSeconds();
+      for (const [start,end] of primaryWindows) {
+        if (minute >= start && minute <= end) return { active:true, start, end, minutes:0 };
+        if (minute < start) return { active:false, start, end, minutes:Math.max(0, Math.ceil(((start-minute)*60-second)/60)) };
+      }
+      const [start,end] = primaryWindows[0];
+      return { active:false, start, end, minutes:Math.max(0, Math.ceil((((60-minute)+start)*60-second)/60)) };
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2,"0");
+      const m = String(now.getMinutes()).padStart(2,"0");
+      const s = String(now.getSeconds()).padStart(2,"0");
+      elements.clock.textContent = `${h}:${m}:${s}`;
+      elements.date.textContent = now.toLocaleDateString(undefined, { weekday:"short", day:"2-digit", month:"short" });
+      elements.heroClock.textContent = `${h}:${m}`;
+      elements.heroDate.textContent = now.toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
+      elements.currentMinute.textContent = m;
+
+      const minute = now.getMinutes();
+      $$(".window").forEach((node) => node.classList.toggle("active", minute >= Number(node.dataset.start) && minute <= Number(node.dataset.end)));
+      $$("#timeline .minute").forEach((node) => node.classList.toggle("current", Number(node.dataset.minute) === minute));
+
+      const pink = inWindow(minute, primaryWindows);
+      const purple = inWindow(minute, bonusWindows);
+      elements.timingState.textContent = pink && purple ? "Overlap" : pink ? "Pink active" : purple ? "Purple active" : "Monitoring";
+      elements.timingState.className = `tag ${pink ? "pink-text" : purple ? "purple-text" : ""}`;
+      elements.timingMessage.innerHTML = pink ? '<span class="pink-text">Pink</span> window is active now.' : purple ? '<span class="purple-text">Purple</span> window is active now.' : 'Monitoring configured windows.';
+      updateTargetWindow(now);
+    }
+
+    function calculatePinkProjection() {
+      const a = parseTime(elements.pinkA.value);
+      const b = parseTime(elements.pinkB.value);
+      if (a === null || b === null) {
+        elements.pinkResult.hidden = true;
+        elements.pinkEmpty.hidden = false;
+        elements.pinkEmpty.querySelector("strong").textContent = "Enter both pink times";
+        return;
+      }
+      let gap = b - a;
+      if (gap <= 0) gap += 1440;
+      const next = formatTime(b + gap);
+      elements.pinkNext.textContent = next;
+      elements.pinkResultText.innerHTML = `Based on the two <span class="pink-text">pink</span> times you entered.`;
+      elements.pinkResult.hidden = false;
+      elements.pinkEmpty.hidden = true;
+      addActivity("pink", "Pink projection created", `Projected marker ${next}`);
+    }
+
+    function clusterTimes(anchor) {
+      const result = [anchor];
+      let cursor = anchor;
+      for (const step of clusterIntervals) { cursor += step; result.push(cursor); }
+      return result.map(formatTime);
+    }
+
+    function renderClusterStrip(container, times) {
+      const fragment = document.createDocumentFragment();
+      times.forEach((time, index) => {
+        const node = document.createElement("div");
+        node.className = "cluster-chip";
+        node.innerHTML = `<span>${index === 0 ? "Anchor" : `Marker ${index}`}</span><strong>${time}</strong>`;
+        fragment.appendChild(node);
+      });
+      container.replaceChildren(fragment);
+    }
+
+    function generateCluster() {
+      const anchor = parseTime(elements.clusterAnchor.value);
+      if (anchor === null) {
+        elements.clusterResult.hidden = true;
+        elements.clusterEmpty.hidden = false;
+        elements.clusterEmpty.querySelector("strong").textContent = "Choose an anchor time";
+        return;
+      }
+      renderClusterStrip(elements.clusterStrip, clusterTimes(anchor));
+      elements.clusterResult.hidden = false;
+      elements.clusterEmpty.hidden = true;
+      addActivity("neutral", "Cluster generated", `Anchor ${formatTime(anchor)}`);
+    }
+
+    const sessionState = { active:false, target:0, limit:0, startedAt:null, entries:[] };
+    const appState = { sessionHistory:[], activity:[] };
+    const STORAGE_KEY = "aviator-app-v4";
+
+    function saveAppState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ session: sessionState, history: appState.sessionHistory, activity: appState.activity }));
+    }
+
+    function loadAppState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (saved && typeof saved === "object") {
+          const current = saved.session || {};
+          sessionState.active = Boolean(current.active);
+          sessionState.target = Number(current.target) || 0;
+          sessionState.limit = Number(current.limit) || 0;
+          sessionState.startedAt = current.startedAt || null;
+          sessionState.entries = Array.isArray(current.entries) ? current.entries : [];
+          appState.sessionHistory = Array.isArray(saved.history) ? saved.history : [];
+          appState.activity = Array.isArray(saved.activity) ? saved.activity : [];
+          return;
         }
-        return gaps;
-    };
-
-    const renderIntervalModel = (projection = state.intervalProjection) => {
-        if (!dom.intervalResult) return;
-        if (!projection) {
-            dom.intervalResult.innerHTML = 'Enter two pink timestamps, or use the last two recorded pink events.';
-        } else {
-            dom.intervalResult.innerHTML =
-                `A: <b>${projection.previous}</b> · B: <b>${projection.current}</b><br>` +
-                `Gap D = B − A: <b>${projection.D} min</b><br>` +
-                `Projected C = B + D = 2B − A: <b>${projection.predicted}</b>`;
+        const legacy = JSON.parse(localStorage.getItem("aviator-session-v3") || "null");
+        if (legacy && typeof legacy === "object") {
+          sessionState.active = Boolean(legacy.active);
+          sessionState.target = Number(legacy.target) || 0;
+          sessionState.limit = Number(legacy.limit) || 0;
+          sessionState.entries = Array.isArray(legacy.entries) ? legacy.entries : [];
         }
+      } catch {}
+    }
 
-        const gaps = getHistoricalIntervals();
-        if (!gaps.length) {
-            dom.modelMetrics.innerHTML = '<span class="model-metric">Historical intervals: insufficient data</span>';
-            return;
-        }
-        const mean = gaps.reduce((s,v) => s + v, 0) / gaps.length;
-        const sorted = [...gaps].sort((a,b) => a-b);
-        const mid = Math.floor(sorted.length / 2);
-        const median = sorted.length % 2 ? sorted[mid] : (sorted[mid-1] + sorted[mid]) / 2;
-        const variance = gaps.reduce((s,v) => s + (v-mean)**2, 0) / gaps.length;
-        const sd = Math.sqrt(variance);
-        dom.modelMetrics.innerHTML =
-            `<span class="model-metric">Intervals: ${gaps.length}</span>` +
-            `<span class="model-metric">Mean: ${mean.toFixed(1)} min</span>` +
-            `<span class="model-metric">Median: ${median.toFixed(1)} min</span>` +
-            `<span class="model-metric">Spread (SD): ${sd.toFixed(1)} min</span>`;
-    };
+    function addActivity(type, title, detail = "") {
+      appState.activity.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()), at: new Date().toISOString(), type, title, detail });
+      if (appState.activity.length > 250) appState.activity.splice(0, appState.activity.length - 250);
+      saveAppState();
+      renderActivity();
+    }
 
-    const useLastTwoPinks = () => {
-        const series = getPinkMinuteSeries();
-        if (series.length < 2) {
-            dom.intervalResult.innerHTML = 'Record at least two pink events before using historical timestamps.';
-            return;
-        }
-        const a = new Date(series[series.length - 2]);
-        const b = new Date(series[series.length - 1]);
-        const fmt = d => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        dom.intervalA.value = fmt(a);
-        dom.intervalB.value = fmt(b);
-        state.intervalProjection = calculateIntervalProjection(dom.intervalA.value, dom.intervalB.value);
-        renderIntervalModel();
-    };
+    function saveSession() { saveAppState(); }
 
-    const addOutcome = (color, multiplier = null) => {
-        state.outcomes.push({ color, multiplier, timestamp: new Date().toISOString() });
-        if (color === 'PINK') state.pinkEvents.push({ time: new Date().toISOString(), multiplier: multiplier || 0 });
-        saveData();
-        updateHistoryUI();
-        refreshAll();
-    };
-    const undoLast = () => { if (state.outcomes.length) { state.outcomes.pop(); saveData(); updateHistoryUI(); refreshAll(); } };
-    const resetOutcomes = () => { state.outcomes = []; state.pinkEvents = []; saveData(); updateHistoryUI(); refreshAll(); };
-    const renderD3MenuChart = () => {
-        const container = document.getElementById('d3-menu-viz');
-        if (!container) return;
-        container.innerHTML = '';
-        const start = 1000, mult = 1.20, rounds = 20;
-        let data = [], val = start;
-        for (let i = 0; i <= rounds; i++) { data.push({ round: i, balance: val }); val *= mult; }
-        const w = 300, h = 150, margin = { top: 12, right: 10, bottom: 20, left: 40 };
-        const svg = d3.select(container).append('svg').attr('width', w).attr('height', h).append('g').attr('transform', `translate(${margin.left},${margin.top})`);
-        const x = d3.scaleLinear().domain([0, rounds]).range([0, w - margin.left - margin.right]);
-        const y = d3.scaleLinear().domain([0, d3.max(data, d => d.balance)]).range([h - margin.top - margin.bottom, 0]);
-        svg.append('path').datum(data).attr('fill', 'none').attr('stroke', '#E85D3A').attr('stroke-width', 2).attr('d', d3.line().x(d => x(d.round)).y(d => y(d.balance)).curve(d3.curveMonotoneX));
-        svg.selectAll('.dot').data(data).enter().append('circle').attr('cx', d => x(d.round)).attr('cy', d => y(d.balance)).attr('r', 2).attr('fill', '#3B7EA5');
-        svg.append('g').attr('transform', `translate(0,${h - margin.top - margin.bottom})`).call(d3.axisBottom(x).ticks(5));
-        svg.append('g').call(d3.axisLeft(y).tickFormat(d => d.toFixed(0) + ' TZS'));
-        svg.append('text').attr('x', (w - margin.left - margin.right) / 2).attr('y', -4).attr('text-anchor', 'middle').style('font-size', '6px').style('fill', '#8A9BB0').text('Compounding: 1,000 TZS · 1.20x/round');
-    };
-    const attachMenuD3 = () => {
-        if (!document.getElementById('d3-menu-viz')) {
-            const div = document.createElement('div');
-            div.id = 'd3-menu-viz';
-            div.style.marginTop = '12px';
-            div.style.padding = '10px';
-            div.style.background = '#0F1725';
-            div.style.border = '1px solid #2A3A52';
-            div.innerHTML = '<div style="font-size:0.7rem; font-weight:700; margin-bottom:6px;">Balance projection · 20 rounds</div>';
-            document.getElementById('panelContent').appendChild(div);
-        }
-        renderD3MenuChart();
-    };
-    const showPanel = (title, html) => { dom.panelTitle.innerText = title; dom.panelContent.innerHTML = html; dom.menuPanel.classList.add('open'); dom.menuOverlay.style.display = 'block'; attachMenuD3(); };
-    const hidePanel = () => { dom.menuPanel.classList.remove('open'); dom.menuOverlay.style.display = 'none'; };
-    const buildMainMenu = () => {
-        const html = `
-            <button class="menu-item" id="menuPattern">Pattern Intelligence</button>
-            <button class="menu-item" id="menuCompounding">Compounding Table TZS</button>
-            <button class="menu-item" id="menuCashout">Double Bet and Hedge</button>
-            <button class="menu-item" id="menuTips">Full Strategy Guide</button>
-            <button class="menu-item" id="menuDisclaimer">Legal and Disclaimer</button>
-        `;
-        showPanel('Pink Hunter Strategy Core', html);
-        document.getElementById('menuPattern')?.addEventListener('click', () => { hidePanel(); showPanel('Pattern Intelligence', `<div class="pattern-alert">${detectPatterns()}</div>`); });
-        document.getElementById('menuCompounding')?.addEventListener('click', () => { let rows='',b=1000; for(let i=0;i<20;i++){ rows+=`<tr><td class="text-center">${i+1}</td><td class="text-center">1.20x</td><td class="text-end">${b.toFixed(0)} TZS</td><td class="text-end">${(b*1.2).toFixed(0)} TZS</td>`; b*=1.2; } hidePanel(); showPanel('Compounding Table', `<table class="menu-table"><thead><tr><th>Round</th><th>Multiplier</th><th>Placed TZS</th><th>Cashed TZS</th></tr></thead><tbody>${rows}</tbody></table><div class="small mt-2">Start 1,000 TZS, 1.20x each round</div>`); });
-        document.getElementById('menuCashout')?.addEventListener('click', () => { hidePanel(); showPanel('Double Bet Strategy', `<div class="tip-card"><div class="tip-title">How to Hedge</div><div class="tip-desc">Auto cash-out first bet at 1.5x to cover total stake. Second bet manually cash out at 5x-10x. Example: 20 TZS on Bet A (1.5x → 30 TZS), 10 TZS on Bet B (5x → 50 TZS). Net profit: 20 TZS.</div></div><div class="tip-card"><div class="tip-title">When to use</div><div class="tip-desc">Ideal for deep blue streaks (6+ blues) and pink windows. Reduces emotional cash-out mistakes.</div></div>`); });
-        document.getElementById('menuTips')?.addEventListener('click', () => { hidePanel(); showPanel('Full Strategy Guide', `<div class="tips-grid"><div class="tip-card"><div class="tip-title">Rule of Three Blues</div><div class="tip-desc">After 3 consecutive blues, a claimed pattern signal, not a validated probability. Enter with 2x target.</div></div><div class="tip-card"><div class="tip-title">Deep Blue Pink Hunt</div><div class="tip-desc">6-9 blues in a row → pink not established as predictable; timing model may be checked. Use double bet: cover at 2x, chase 10x.</div></div><div class="tip-card"><div class="tip-title">Instaloss Drain</div><div class="tip-desc">Multiple 1.00x-1.05x crashes → stop betting for 5-10 minutes.</div></div><div class="tip-card"><div class="tip-title">Purple Sandwich</div><div class="tip-desc">Pattern Purple-Blue-Purple → next round likely purple. Target 2.5x-3x.</div></div><div class="tip-card"><div class="tip-title">Hourly Pink Windows</div><div class="tip-desc">Community slots: :02-:05, :18-:22, :35-:38, :52-:57 plus original windows.</div></div><div class="tip-card"><div class="tip-title">10x Stack in 60 Mins</div><div class="tip-desc">3-step ladder: double at 2x, then 3x on purple streaks, final pink hunt with double bet.</div></div></div>`); });
-        document.getElementById('menuDisclaimer')?.addEventListener('click', () => { hidePanel(); showPanel('Disclaimer', `<div class="pattern-alert">Informational use only. Past patterns do not guarantee future results. Created by RMS Group. Gamble responsibly.</div>`); });
-    };
-    const initDraggable = () => {
-        let isDragging = false, startX, startY, startLeft, startTop;
-        const btn = dom.menuBtn;
-        const onStart = (e) => { e.preventDefault(); const point = e.touches ? e.touches[0] : e; startX = point.clientX; startY = point.clientY; const rect = btn.getBoundingClientRect(); startLeft = rect.left; startTop = rect.top; isDragging = true; };
-        const onMove = (e) => { if (!isDragging) return; const point = e.touches ? e.touches[0] : e; let newLeft = startLeft + (point.clientX - startX); let newTop = startTop + (point.clientY - startY); newLeft = Math.min(window.innerWidth - 70, Math.max(0, newLeft)); newTop = Math.min(window.innerHeight - 70, Math.max(0, newTop)); btn.style.left = newLeft + 'px'; btn.style.top = newTop + 'px'; btn.style.right = 'auto'; btn.style.bottom = 'auto'; };
-        const onEnd = () => { if (!isDragging) return; isDragging = false; const finalLeft = parseInt(btn.style.left || '0'); const finalTop = parseInt(btn.style.top || '0'); if (Math.abs(startLeft - finalLeft) < 5 && Math.abs(startTop - finalTop) < 5) buildMainMenu(); };
-        btn.addEventListener('mousedown', onStart); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onEnd);
-        btn.addEventListener('touchstart', onStart); window.addEventListener('touchmove', onMove); window.addEventListener('touchend', onEnd);
-    };
-    const initKeyboard = () => {
-        window.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            const key = e.key;
-            if (key === 'b' || key === 'B') { addOutcome('BLUE'); e.preventDefault(); }
-            else if (key === 'p' || key === 'P') { addOutcome('PURPLE'); e.preventDefault(); }
-            else if (key === 'k' || key === 'K') { addOutcome('PINK', null); e.preventDefault(); }
-            else if (key === 'r' || key === 'R') { resetOutcomes(); e.preventDefault(); }
-            else if ((e.ctrlKey || e.metaKey) && key === 'z') { undoLast(); e.preventDefault(); }
+    function totals() {
+      return sessionState.entries.reduce((acc,item) => { acc.used += item.amount; acc.net += item.net; return acc; }, { used:0, net:0 });
+    }
+
+    function startSession() {
+      if (sessionState.active) {
+        elements.sessionMessage.textContent = "A session is already active. End it before starting another.";
+        return;
+      }
+      const target = Math.max(0, Number(elements.profitTarget.value) || 0);
+      const limit = Math.max(0, Number(elements.sessionLimit.value) || 0);
+      if (!target || !limit) {
+        elements.sessionMessage.textContent = "Enter a profit target and a session limit first.";
+        return;
+      }
+      sessionState.active = true;
+      sessionState.target = target;
+      sessionState.limit = limit;
+      sessionState.startedAt = new Date().toISOString();
+      sessionState.entries = [];
+      saveSession();
+      addActivity("neutral", "Session started", `Target ${formatTZS(target)} · limit ${formatTZS(limit)}`);
+      renderSession();
+      elements.sessionMessage.textContent = "Session started. Record only actual results.";
+    }
+
+    function recordResult(result) {
+      if (!sessionState.active) { elements.sessionMessage.textContent = "Start the session before recording a result."; return; }
+      const amount = Math.max(0, Number(elements.roundEntry.value) || 0);
+      const returned = result === "Loss" ? 0 : Math.max(0, Number(elements.roundReturn.value) || 0);
+      if (!amount) { elements.sessionMessage.textContent = "Enter the amount used first."; return; }
+      const net = returned - amount;
+      sessionState.entries.push({ time:new Date().toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" }), result, amount, returned, net });
+      saveSession();
+      addActivity(result === "Win" ? "win" : "loss", `${result} recorded`, `${formatTZS(amount)} used · ${formatTZS(net)} net`);
+      renderSession();
+      elements.roundEntry.value = "";
+      elements.roundReturn.value = "";
+      elements.sessionMessage.textContent = result === "Loss" ? "Loss recorded. Consider a cooldown before another decision." : "Win recorded. Target progress updated.";
+    }
+
+    function clearSession() {
+      if (!sessionState.active && !sessionState.entries.length) {
+        elements.sessionMessage.textContent = "There is no active session to end.";
+        return;
+      }
+      if (sessionState.entries.length) {
+        const net = sessionState.entries.reduce((sum, item) => sum + item.net, 0);
+        appState.sessionHistory.push({
+          id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+          startedAt: sessionState.startedAt || new Date().toISOString(),
+          endedAt: new Date().toISOString(),
+          target: sessionState.target,
+          limit: sessionState.limit,
+          entries: sessionState.entries.map((item) => ({...item})),
+          net
         });
-    };
-    window.addEventListener('DOMContentLoaded', () => {
-        dom.loader = document.getElementById('loaderOverlay');
-        dom.mainApp = document.getElementById('mainApp');
-        dom.menuBtn = document.getElementById('menuBtn');
-        dom.menuOverlay = document.getElementById('menuOverlay');
-        dom.menuPanel = document.getElementById('menuPanel');
-        dom.panelTitle = document.getElementById('panelTitle');
-        dom.panelContent = document.getElementById('panelContent');
-        dom.closePanelBtn = document.getElementById('closePanelBtn');
-        dom.gaugeCircleFill = document.getElementById('gaugeCircleFill');
-        dom.gaugePercent = document.getElementById('gaugePercent');
-        dom.alertMessage = document.getElementById('alertMessage');
-        dom.windowStatus = document.getElementById('windowStatus');
-        dom.slotStatus = document.getElementById('slotStatus');
-        dom.marketStatus = document.getElementById('marketStatus');
-        dom.windowsContainer = document.getElementById('windowsContainer');
-        dom.liveMinute = document.getElementById('liveMinute');
-        dom.historyLog = document.getElementById('historyLog');
-        dom.patternAlert = document.getElementById('patternAlert');
-        dom.forecastContainer = document.getElementById('forecastContainer');
-        dom.mainCanvas = document.getElementById('mainChart');
-        dom.chartTitle = document.getElementById('chartTitle');
-        dom.liveTimestamp = document.getElementById('liveTimestamp');
-        dom.addBlue = document.getElementById('addBlueBtn');
-        dom.addPurple = document.getElementById('addPurpleBtn');
-        dom.addPink = document.getElementById('addPinkBtn');
-        dom.resetBtn = document.getElementById('resetOutcomesBtn');
-        dom.heatmapContainer = document.getElementById('heatmapContainer');
-        dom.chartFeedback = document.getElementById('chartFeedback');
-        dom.strategyAdvice = document.getElementById('strategyAdvice');
-        dom.intervalA = document.getElementById('intervalA');
-        dom.intervalB = document.getElementById('intervalB');
-        dom.intervalResult = document.getElementById('intervalResult');
-        dom.modelMetrics = document.getElementById('modelMetrics');
-        dom.calculateIntervalBtn = document.getElementById('calculateIntervalBtn');
-        dom.useLastPinkBtn = document.getElementById('useLastPinkBtn');
-        PINK_WINDOWS.forEach(([s,e]) => { let tag = document.createElement('span'); tag.className = 'window-tag'; tag.innerText = `${s}-${e} min`; dom.windowsContainer.appendChild(tag); });
-        loadData(); updateHistoryUI(); renderIntervalModel();
-        dom.addBlue.onclick = () => addOutcome('BLUE');
-        dom.addPurple.onclick = () => addOutcome('PURPLE');
-        dom.addPink.onclick = () => addOutcome('PINK', null);
-        dom.resetBtn.onclick = resetOutcomes;
-        dom.calculateIntervalBtn.onclick = () => {
-            state.intervalProjection = calculateIntervalProjection(dom.intervalA.value, dom.intervalB.value);
-            if (!state.intervalProjection) {
-                dom.intervalResult.innerHTML = 'Please enter valid timestamps for A and B.';
-                return;
-            }
-            renderIntervalModel();
-        };
-        dom.useLastPinkBtn.onclick = useLastTwoPinks;
-        dom.closePanelBtn.onclick = hidePanel;
-        dom.menuOverlay.onclick = hidePanel;
-        document.querySelectorAll('.chart-opt').forEach(opt => opt.addEventListener('click', () => {
-            document.querySelectorAll('.chart-opt').forEach(o => o.classList.remove('active'));
-            opt.classList.add('active'); state.chartStyle = opt.dataset.style; renderChart();
-        }));
-        const circumference = 2 * Math.PI * 80;
-        dom.gaugeCircleFill.style.strokeDasharray = circumference;
-        dom.gaugeCircleFill.style.strokeDashoffset = circumference;
-        refreshAll(); state.refreshInterval = setInterval(refreshAll, 900);
-        initKeyboard();
-        setTimeout(() => {
-            dom.loader.style.opacity = '0';
-            setTimeout(() => {
-                dom.loader.style.display = 'none';
-                dom.mainApp.style.display = 'block';
-                initDraggable();
-            }, 200);
-        }, 2000);
+      }
+      addActivity("neutral", "Session ended", sessionState.entries.length ? `${sessionState.entries.length} recorded entries archived.` : "Session closed with no recorded entries.");
+      sessionState.active = false;
+      sessionState.target = 0;
+      sessionState.limit = 0;
+      sessionState.startedAt = null;
+      sessionState.entries = [];
+      elements.profitTarget.value = "";
+      elements.sessionLimit.value = "";
+      elements.roundEntry.value = "";
+      elements.roundReturn.value = "";
+      saveAppState();
+      renderSession();
+      renderStatistics();
+      elements.sessionMessage.textContent = "Session ended and history preserved.";
+    }
+
+    function renderSession() {
+      if (sessionState.active) {
+        if (!elements.profitTarget.value) elements.profitTarget.value = sessionState.target || "";
+        if (!elements.sessionLimit.value) elements.sessionLimit.value = sessionState.limit || "";
+      }
+      const { used, net } = totals();
+      const target = sessionState.target || 0;
+      const remaining = Math.max(0, target - net);
+      const progress = target > 0 ? Math.max(0, Math.min(100, (net / target) * 100)) : 0;
+      elements.sessionStateTag.textContent = sessionState.active ? "Active" : "Not started";
+      elements.targetProgressCard.hidden = !sessionState.active;
+      if (sessionState.active) {
+        elements.targetProgressPercent.textContent = `${progress.toFixed(0)}%`;
+        elements.targetProgressFill.style.width = `${progress}%`;
+        elements.targetRealizedText.textContent = `${formatTZS(net)} realized`;
+        elements.targetRemainingText.textContent = `${formatTZS(remaining)} remaining`;
+      }
+      elements.sessionCount.textContent = `${sessionState.entries.length} ${sessionState.entries.length === 1 ? "entry" : "entries"}`;
+
+      if (!sessionState.entries.length) {
+        elements.sessionLedger.innerHTML = '<tr><td class="empty-cell" colspan="5">No session results yet.</td></tr>';
+      } else {
+        const fragment = document.createDocumentFragment();
+        sessionState.entries.slice().reverse().forEach((item) => {
+          const row = document.createElement("tr");
+          const resultClass = item.result === "Win" ? "win-text" : "loss-text";
+          row.innerHTML = `<td>${item.time}</td><td class="${resultClass}">${item.result}</td><td>${formatTZS(item.amount)}</td><td>${formatTZS(item.returned)}</td><td class="${item.net >= 0 ? "win-text" : "loss-text"}">${formatTZS(item.net)}</td>`;
+          fragment.appendChild(row);
+        });
+        elements.sessionLedger.replaceChildren(fragment);
+      }
+      renderProfitLoss();
+      renderStatistics();
+    }
+
+    function updateTargetWindow(now = new Date()) {
+      const next = getNextPrimaryWindow(now);
+      if (next.active) {
+        elements.targetWindowState.textContent = "Active";
+        elements.targetWindowState.className = "tag pink-text";
+        elements.targetWindowMessage.innerHTML = '<span class="pink-text">Pink</span> window is active now.';
+      } else {
+        elements.targetWindowState.textContent = `${next.minutes} min`;
+        elements.targetWindowState.className = "tag";
+        elements.targetWindowMessage.innerHTML = `Wait about ${next.minutes} ${next.minutes === 1 ? "minute" : "minutes"} for the next <span class="pink-text">pink</span> window.`;
+      }
+    }
+
+    function targetGenerateCluster() {
+      const anchor = parseTime(elements.targetClusterAnchor.value);
+      if (anchor === null) {
+        elements.sessionMessage.textContent = "Choose a cluster anchor time first.";
+        elements.targetClusterStrip.hidden = true;
+        return;
+      }
+      renderClusterStrip(elements.targetClusterStrip, clusterTimes(anchor));
+      elements.targetClusterStrip.hidden = false;
+      addActivity("neutral", "Cluster used in session", `Anchor ${formatTime(anchor)}`);
+    }
+
+    function buildStakingPlan() {
+      const bankroll = Math.max(0, Number(elements.stakingBankroll.value) || 0);
+      const stake = Math.max(0, Number(elements.stakingAmount.value) || 0);
+      const rounds = Math.min(100, Math.max(0, Math.floor(Number(elements.stakingRounds.value) || 0)));
+      const cashout = Math.max(0, Number(elements.stakingCashout.value) || 0);
+      if (!bankroll || !stake || !rounds || cashout < 1) {
+        elements.stakingOutput.hidden = true;
+        elements.stakingEmpty.hidden = false;
+        elements.stakingEmpty.querySelector("strong").textContent = "Complete all plan inputs";
+        return;
+      }
+
+      const exposure = stake * rounds;
+      const returned = stake * cashout;
+      const margin = returned - stake;
+      elements.stakingExposure.textContent = formatTZS(exposure);
+      elements.stakingRemaining.textContent = formatTZS(Math.max(0, bankroll - exposure));
+      elements.stakingWinReturn.textContent = formatTZS(returned);
+      elements.stakingWinNet.textContent = formatTZS(margin);
+
+      const fragment = document.createDocumentFragment();
+      for (let index = 1; index <= rounds; index += 1) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${String(index).padStart(2,"0")}</td><td>${formatTZS(stake)}</td><td>${cashout.toFixed(2)}x</td><td>${formatTZS(returned)}</td><td>${formatTZS(margin)}</td>`;
+        fragment.appendChild(row);
+      }
+      elements.stakingTable.replaceChildren(fragment);
+      elements.stakingOutput.hidden = false;
+      elements.stakingEmpty.hidden = true;
+      addActivity("neutral", "Staking plan built", `${rounds} planned entries`);
+    }
+
+    function renderProfitLoss() {
+      if (!sessionState.entries.length) {
+        elements.plStatus.textContent = "No entries";
+        elements.plEmpty.hidden = false;
+        elements.plOutput.hidden = true;
+        return;
+      }
+      let grossProfit = 0, grossLoss = 0, wins = 0, running = 0;
+      const fragment = document.createDocumentFragment();
+      sessionState.entries.forEach((item,index) => {
+        if (item.net > 0) grossProfit += item.net;
+        if (item.net < 0) grossLoss += Math.abs(item.net);
+        if (item.result === "Win") wins += 1;
+        running += item.net;
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${String(index+1).padStart(2,"0")}</td><td>${item.time}</td><td class="${item.result === "Win" ? "win-text" : "loss-text"}">${item.result}</td><td>${formatTZS(item.amount)}</td><td>${formatTZS(item.returned)}</td><td class="${item.net >= 0 ? "win-text" : "loss-text"}">${formatTZS(item.net)}</td><td>${formatTZS(running)}</td>`;
+        fragment.appendChild(row);
+      });
+      const net = grossProfit - grossLoss;
+      elements.plGrossProfit.textContent = formatTZS(grossProfit);
+      elements.plGrossLoss.textContent = formatTZS(grossLoss);
+      elements.plNet.textContent = formatTZS(net);
+      elements.plNet.className = net > 0 ? "win-text" : net < 0 ? "loss-text" : "";
+      elements.plWinRate.textContent = `${((wins / sessionState.entries.length) * 100).toFixed(0)}%`;
+      elements.plStatus.textContent = net > 0 ? "Profit" : net < 0 ? "Loss" : "Break even";
+      elements.profitLossLedger.replaceChildren(fragment);
+      elements.plEmpty.hidden = true;
+      elements.plOutput.hidden = false;
+    }
+
+    function allSessionsForStats() {
+      const sessions = [...appState.sessionHistory];
+      if (sessionState.active || sessionState.entries.length) {
+        sessions.push({
+          id: "current",
+          startedAt: sessionState.startedAt || new Date().toISOString(),
+          endedAt: null,
+          entries: sessionState.entries,
+          net: sessionState.entries.reduce((sum, item) => sum + item.net, 0)
+        });
+      }
+      return sessions.filter((session) => Array.isArray(session.entries) && session.entries.length);
+    }
+
+    function renderStatistics() {
+      const sessions = allSessionsForStats();
+      const entries = sessions.flatMap((session) => session.entries);
+      if (!entries.length) {
+        elements.statsStatus.textContent = "No data";
+        elements.statsEmpty.hidden = false;
+        elements.statsOutput.hidden = true;
+        return;
+      }
+      const wins = entries.filter((item) => item.result === "Win").length;
+      const losses = entries.filter((item) => item.result === "Loss").length;
+      const net = entries.reduce((sum, item) => sum + item.net, 0);
+      const used = entries.reduce((sum, item) => sum + item.amount, 0);
+      const best = Math.max(...sessions.map((session) => Number(session.net) || 0));
+      const largestLoss = Math.max(0, ...entries.filter((item) => item.net < 0).map((item) => Math.abs(item.net)));
+      elements.statsSessions.textContent = String(sessions.length);
+      elements.statsWins.textContent = String(wins);
+      elements.statsLosses.textContent = String(losses);
+      elements.statsWinRate.textContent = `${((wins / entries.length) * 100).toFixed(0)}%`;
+      elements.statsNet.textContent = formatTZS(net);
+      elements.statsNet.className = net > 0 ? "win-text" : net < 0 ? "loss-text" : "";
+      elements.statsBest.textContent = formatTZS(best);
+      elements.statsBest.className = best > 0 ? "win-text" : best < 0 ? "loss-text" : "";
+      elements.statsLargestLoss.textContent = formatTZS(largestLoss);
+      elements.statsUsed.textContent = formatTZS(used);
+      elements.statsStatus.textContent = `${entries.length} results`;
+
+      const fragment = document.createDocumentFragment();
+      sessions.slice().reverse().forEach((session, index) => {
+        const row = document.createElement("tr");
+        const sessionWins = session.entries.filter((item) => item.result === "Win").length;
+        const sessionLosses = session.entries.filter((item) => item.result === "Loss").length;
+        const started = new Date(session.startedAt).toLocaleString([], { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
+        const sessionNet = Number(session.net) || 0;
+        row.innerHTML = `<td>${session.id === "current" ? "Current" : `#${sessions.length-index}`}</td><td>${started}</td><td>${session.entries.length}</td><td class="win-text">${sessionWins}</td><td class="loss-text">${sessionLosses}</td><td class="${sessionNet >= 0 ? "win-text" : "loss-text"}">${formatTZS(sessionNet)}</td>`;
+        fragment.appendChild(row);
+      });
+      elements.statsSessionTable.replaceChildren(fragment);
+      elements.statsEmpty.hidden = true;
+      elements.statsOutput.hidden = false;
+    }
+
+    function renderActivity() {
+      const events = appState.activity.slice().reverse();
+      elements.activityCount.textContent = `${events.length} ${events.length === 1 ? "event" : "events"}`;
+      if (!events.length) {
+        elements.activityEmpty.hidden = false;
+        elements.activityOutput.hidden = true;
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      events.forEach((event) => {
+        const node = document.createElement("div");
+        node.className = "activity-item";
+        const when = new Date(event.at);
+        const time = when.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+        node.innerHTML = `<div class="activity-time">${time}</div><div class="activity-dot ${event.type || "neutral"}"></div><div class="activity-copy"><strong>${event.title}</strong><span>${event.detail || "Recorded action"}</span></div>`;
+        fragment.appendChild(node);
+      });
+      elements.activityList.replaceChildren(fragment);
+      elements.activityEmpty.hidden = true;
+      elements.activityOutput.hidden = false;
+    }
+
+    function clearActivity() {
+      appState.activity = [];
+      saveAppState();
+      renderActivity();
+    }
+
+    function toggleFocusMode() {
+      document.body.classList.toggle("focus-mode");
+      localStorage.setItem("aviator-focus", document.body.classList.contains("focus-mode") ? "1" : "0");
+    }
+
+    function initializeFocusMode() {
+      document.body.classList.toggle("focus-mode", localStorage.getItem("aviator-focus") === "1");
+    }
+
+    function buildRollover() {
+      const start = Math.max(0, Number(elements.startAmount.value) || 0);
+      const multiplier = Math.max(0, Number(elements.targetMultiplier.value) || 0);
+      const rounds = Math.min(100, Math.max(0, Math.floor(Number(elements.totalRounds.value) || 0)));
+      if (!start || multiplier < 1 || !rounds) {
+        elements.rolloverOutput.hidden = true;
+        elements.rolloverEmpty.hidden = false;
+        elements.rolloverEmpty.querySelector("strong").textContent = "Complete all planner inputs";
+        return;
+      }
+      let current = start;
+      const fragment = document.createDocumentFragment();
+      for (let round = 1; round <= rounds; round += 1) {
+        const returned = current * multiplier;
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${String(round).padStart(2,"0")}</td><td>${current.toFixed(2)}</td><td>${multiplier.toFixed(2)}x</td><td>${returned.toFixed(2)}</td>`;
+        fragment.appendChild(row);
+        current = returned;
+      }
+      elements.rolloverTable.replaceChildren(fragment);
+      elements.rolloverOutput.hidden = false;
+      elements.rolloverEmpty.hidden = true;
+      addActivity("neutral", "Rollover projection built", `${rounds} projected rounds`);
+    }
+
+    function setTheme(theme) { document.body.dataset.theme = theme; localStorage.setItem("aviator-theme", theme); }
+    function initializeTheme() { const saved = localStorage.getItem("aviator-theme"); const dark = matchMedia("(prefers-color-scheme: dark)").matches; setTheme(saved || (dark ? "dark" : "light")); }
+
+    $$(".nav-button").forEach((button) => button.addEventListener("click", () => openView(button.dataset.view)));
+    $$("[data-open-view]").forEach((button) => button.addEventListener("click", () => openView(button.dataset.openView)));
+    elements.calculatePink.addEventListener("click", calculatePinkProjection);
+    elements.generateCluster.addEventListener("click", generateCluster);
+    elements.startSession.addEventListener("click", startSession);
+    elements.recordWin.addEventListener("click", () => recordResult("Win"));
+    elements.recordLoss.addEventListener("click", () => recordResult("Loss"));
+    elements.clearSession.addEventListener("click", clearSession);
+    elements.targetGenerateCluster.addEventListener("click", targetGenerateCluster);
+    elements.buildStakingPlan.addEventListener("click", buildStakingPlan);
+    elements.buildRollover.addEventListener("click", buildRollover);
+    elements.focusToggle.addEventListener("click", toggleFocusMode);
+    elements.clearActivity.addEventListener("click", clearActivity);
+    elements.themeToggle.addEventListener("click", () => setTheme(document.body.dataset.theme === "dark" ? "light" : "dark"));
+    elements.menuButton.addEventListener("click", () => document.body.classList.toggle("sidebar-open"));
+    elements.overlay.addEventListener("click", () => document.body.classList.remove("sidebar-open"));
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && document.body.classList.contains("focus-mode")) {
+        document.body.classList.remove("focus-mode");
+        localStorage.setItem("aviator-focus", "0");
+      }
     });
-})();
-</script>
+
+    initializeTheme();
+    initializeFocusMode();
+    buildWindowCards(elements.primaryWindows, primaryWindows, "primary");
+    buildWindowCards(elements.bonusWindows, bonusWindows, "bonus");
+    buildTimeline();
+    loadAppState();
+    renderSession();
+    renderStatistics();
+    renderActivity();
+    updateClock();
+
+    const initialView = location.hash.slice(1);
+    if (routeNames[initialView]) openView(initialView);
+    setInterval(updateClock, 1000);
+  </script>
 </body>
 </html>
