@@ -824,7 +824,211 @@
       .developer-layout { grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr); }
     }
 
-  </style>
+  
+
+    /* Final mobile-first navigation architecture */
+    .drawer-close, .mobile-bottom-nav { display: none; }
+
+    @media (max-width: 820px) {
+      html, body { min-height: 100%; height: auto; }
+      body {
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding-bottom: calc(72px + env(safe-area-inset-bottom));
+      }
+      body.sidebar-open { overflow: hidden; }
+
+      .app {
+        display: block;
+        min-height: 100dvh;
+        height: auto;
+      }
+
+      .content-area {
+        min-height: 100dvh;
+        height: auto;
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        height: 56px;
+        padding: 0 14px;
+        border-bottom: 1px solid var(--line);
+        background: color-mix(in srgb, var(--bg) 94%, transparent);
+      }
+
+      .mobile-menu { display: none !important; }
+      .topbar-left { min-width: 0; }
+      .route strong {
+        max-width: 58vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 14px;
+      }
+      .topbar-actions { margin-left: auto; }
+      .topbar-actions .clock { display: none; }
+      .icon-button { width: 36px; height: 36px; }
+
+      main {
+        min-height: calc(100dvh - 56px);
+        height: auto;
+        padding: 14px 12px 26px;
+        overflow: visible;
+      }
+
+      .view, .view.active { height: auto; overflow: visible; }
+      .view.active { display: block; }
+
+      /* Mobile menu becomes a bottom sheet, not a desktop sidebar. */
+      .sidebar {
+        position: fixed;
+        inset: auto 0 0 0;
+        z-index: 100;
+        width: 100%;
+        height: min(88dvh, 760px);
+        padding: 12px 12px calc(18px + env(safe-area-inset-bottom));
+        border: 1px solid var(--line);
+        border-bottom: 0;
+        border-radius: 22px 22px 0 0;
+        background: var(--surface);
+        box-shadow: 0 -18px 55px rgba(0,0,0,.18);
+        transform: translateY(105%);
+        transition: transform 220ms cubic-bezier(.22,.8,.3,1);
+      }
+      body.sidebar-open .sidebar { transform: translateY(0); }
+      body.focus-mode .sidebar { display: flex; }
+
+      .brand {
+        flex: 0 0 auto;
+        min-height: 56px;
+        padding: 4px 4px 12px;
+      }
+      .brand-mark { width: 38px; height: 38px; }
+      .drawer-close {
+        margin-left: auto;
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface-2);
+        color: var(--text);
+      }
+      .drawer-close svg { width: 18px; height: 18px; }
+      .nav-label { display: none; }
+      .nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        padding: 10px 0 4px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      .nav-button {
+        min-height: 54px;
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: var(--surface-2);
+        color: var(--text);
+        font-size: 12px;
+      }
+      .nav-button.active {
+        background: var(--inverse);
+        border-color: var(--inverse);
+        color: var(--inverse-text);
+      }
+      .nav-button svg { width: 18px; height: 18px; }
+      .sidebar-footer { margin-top: 10px; padding-top: 8px; }
+      .status-row { padding: 5px 7px; }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        display: block;
+        pointer-events: none;
+        opacity: 0;
+        background: rgba(0,0,0,.52);
+        transition: opacity 180ms ease;
+      }
+      body.sidebar-open .overlay {
+        display: block;
+        pointer-events: auto;
+        opacity: 1;
+      }
+
+      .mobile-bottom-nav {
+        position: fixed;
+        left: 8px;
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        z-index: 70;
+        height: 62px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        align-items: stretch;
+        padding: 5px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--surface) 96%, transparent);
+        box-shadow: 0 12px 36px rgba(0,0,0,.14);
+        backdrop-filter: blur(18px);
+      }
+      .mobile-tab {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        padding: 5px 2px;
+        border: 0;
+        border-radius: 13px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 9px;
+        font-weight: 760;
+        cursor: pointer;
+      }
+      .mobile-tab svg { width: 19px; height: 19px; flex: 0 0 auto; }
+      .mobile-tab.active {
+        background: var(--surface-3);
+        color: var(--text);
+      }
+      .mobile-tab:active { transform: scale(.97); }
+      body.focus-mode .mobile-bottom-nav { display: none; }
+      body.focus-mode { padding-bottom: env(safe-area-inset-bottom); }
+
+      .page-head {
+        margin-bottom: 12px;
+        gap: 5px;
+      }
+      .page-head h1 { font-size: clamp(26px, 8vw, 34px); }
+      .page-head p { max-width: 52ch; font-size: 11px; }
+      .card-header { padding: 11px 12px; }
+      .card-body { padding: 12px; }
+      .hero-copy { padding: 20px 16px; }
+      .hero-side { min-height: 118px; }
+      .hero-actions { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 430px) {
+      .nav { grid-template-columns: 1fr; }
+      .sidebar { height: min(92dvh, 780px); }
+      .hero-actions { grid-template-columns: 1fr; }
+      .mobile-bottom-nav { left: 6px; right: 6px; }
+      .mobile-tab { font-size: 8px; }
+    }
+
+    @media (min-width: 821px) {
+      .drawer-close, .mobile-bottom-nav { display: none !important; }
+      .sidebar { border-radius: 0; }
+    }
+</style>
 </head>
 <body>
   <div class="app">
@@ -832,6 +1036,9 @@
       <div class="brand">
         <div class="brand-mark">AI</div>
         <div><strong>Aviator Timing</strong><span>Timing and tracking</span></div>
+        <button class="drawer-close" id="drawerClose" type="button" aria-label="Close menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+        </button>
       </div>
 
       <div class="nav-label">Menu</div>
@@ -1227,6 +1434,29 @@
         </section>
       </main>
     </div>
+
+    <nav class="mobile-bottom-nav" aria-label="Primary navigation">
+      <button class="mobile-tab active" type="button" data-mobile-view="home" aria-label="Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"></path><path d="M5.5 10.5V20h13v-9.5"></path></svg>
+        <span>Home</span>
+      </button>
+      <button class="mobile-tab" type="button" data-mobile-view="target" aria-label="Target">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4"></circle><circle cx="12" cy="12" r="1"></circle></svg>
+        <span>Target</span>
+      </button>
+      <button class="mobile-tab" type="button" data-mobile-view="pink" aria-label="Pink timing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7h14M7 12h10M9 17h6"></path></svg>
+        <span class="pink-text">Pink</span>
+      </button>
+      <button class="mobile-tab" type="button" data-mobile-view="activity" aria-label="Activity">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 7h12M6 12h12M6 17h8"></path><circle cx="3" cy="7" r="1"></circle><circle cx="3" cy="12" r="1"></circle><circle cx="3" cy="17" r="1"></circle></svg>
+        <span>Activity</span>
+      </button>
+      <button class="mobile-tab mobile-more" id="mobileMore" type="button" aria-label="More pages" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="19" cy="12" r="1.7"></circle></svg>
+        <span>More</span>
+      </button>
+    </nav>
   </div>
 
   <script>
@@ -1241,7 +1471,7 @@
 
     const elements = {
       clock: $("#clock"), date: $("#date"), heroClock: $("#heroClock"), heroDate: $("#heroDate"), routeTitle: $("#routeTitle"),
-      menuButton: $("#menuButton"), overlay: $("#overlay"), themeToggle: $("#themeToggle"), focusToggle: $("#focusToggle"),
+      menuButton: $("#menuButton"), overlay: $("#overlay"), drawerClose: $("#drawerClose"), mobileMore: $("#mobileMore"), themeToggle: $("#themeToggle"), focusToggle: $("#focusToggle"),
       primaryWindows: $("#primaryWindows"), bonusWindows: $("#bonusWindows"), timeline: $("#timeline"), currentMinute: $("#currentMinute"), timingState: $("#timingState"), timingMessage: $("#timingMessage"),
       pinkA: $("#pinkA"), pinkB: $("#pinkB"), calculatePink: $("#calculatePink"), pinkResult: $("#pinkResult"), pinkEmpty: $("#pinkEmpty"), pinkNext: $("#pinkNext"), pinkResultText: $("#pinkResultText"),
       clusterAnchor: $("#clusterAnchor"), generateCluster: $("#generateCluster"), clusterResult: $("#clusterResult"), clusterEmpty: $("#clusterEmpty"), clusterStrip: $("#clusterStrip"),
@@ -1259,6 +1489,10 @@
       if (!routeNames[name]) return;
       $$(".view").forEach((view) => view.classList.toggle("active", view.dataset.page === name));
       $$(".nav-button").forEach((button) => button.classList.toggle("active", button.dataset.view === name));
+      $$("[data-mobile-view]").forEach((button) => button.classList.toggle("active", button.dataset.mobileView === name));
+      const primaryMobileViews = new Set(["home", "target", "pink", "activity"]);
+      elements.mobileMore?.classList.toggle("active", !primaryMobileViews.has(name));
+      elements.mobileMore?.setAttribute("aria-expanded", "false");
       elements.routeTitle.textContent = routeNames[name];
       history.replaceState(null, "", `#${name}`);
       document.body.classList.remove("sidebar-open");
@@ -1761,6 +1995,7 @@
     function initializeTheme() { const saved = localStorage.getItem("aviator-theme"); const dark = matchMedia("(prefers-color-scheme: dark)").matches; setTheme(saved || (dark ? "dark" : "light")); }
 
     $$(".nav-button").forEach((button) => button.addEventListener("click", () => openView(button.dataset.view)));
+    $$("[data-mobile-view]").forEach((button) => button.addEventListener("click", () => openView(button.dataset.mobileView)));
     $$("[data-open-view]").forEach((button) => button.addEventListener("click", () => openView(button.dataset.openView)));
     elements.calculatePink.addEventListener("click", calculatePinkProjection);
     elements.generateCluster.addEventListener("click", generateCluster);
@@ -1775,9 +2010,27 @@
     elements.clearActivity.addEventListener("click", clearActivity);
     elements.themeToggle.addEventListener("click", () => setTheme(document.body.dataset.theme === "dark" ? "light" : "dark"));
     elements.menuButton.addEventListener("click", () => document.body.classList.toggle("sidebar-open"));
-    elements.overlay.addEventListener("click", () => document.body.classList.remove("sidebar-open"));
+    elements.mobileMore?.addEventListener("click", () => {
+      const opening = !document.body.classList.contains("sidebar-open");
+      document.body.classList.toggle("sidebar-open", opening);
+      elements.mobileMore.setAttribute("aria-expanded", opening ? "true" : "false");
+    });
+    elements.drawerClose?.addEventListener("click", () => {
+      document.body.classList.remove("sidebar-open");
+      elements.mobileMore?.setAttribute("aria-expanded", "false");
+    });
+    elements.overlay.addEventListener("click", () => {
+      document.body.classList.remove("sidebar-open");
+      elements.mobileMore?.setAttribute("aria-expanded", "false");
+    });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && document.body.classList.contains("focus-mode")) {
+      if (event.key !== "Escape") return;
+      if (document.body.classList.contains("sidebar-open")) {
+        document.body.classList.remove("sidebar-open");
+        elements.mobileMore?.setAttribute("aria-expanded", "false");
+        return;
+      }
+      if (document.body.classList.contains("focus-mode")) {
         document.body.classList.remove("focus-mode");
         localStorage.setItem("aviator-focus", "0");
       }
